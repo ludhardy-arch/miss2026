@@ -54,7 +54,7 @@ export function AppProvider({ children }) {
     );
   }, []);
 
-  // SYNC VOTES OPEN & TOUR
+  // SYNC VOTES OPEN, TOUR, FINALE
   useEffect(() => {
     const vRef = ref(database, "rooms/miss2026/votesOpen");
     const tRef = ref(database, "rooms/miss2026/tour");
@@ -77,7 +77,7 @@ export function AppProvider({ children }) {
     };
   }, []);
 
-  // ⭐⭐ RESET DES VOTES D’UN JOUEUR ⭐⭐
+  // ⭐ RESET COMPLET D’UN JOUEUR ⭐
   const resetPlayerVotes = (pseudo) => {
     update(ref(database, `rooms/miss2026/players/${pseudo}`), {
       tour1: [],
@@ -88,9 +88,9 @@ export function AppProvider({ children }) {
     });
   };
 
-  // ⭐ addPlayer modifié pour RESET AUTO à chaque connexion ⭐
+  // Toujours remettre le joueur à zéro à l'entrée
   const addPlayer = (pseudo) => {
-    resetPlayerVotes(pseudo); // <-- le joueur repart TOUJOURS à zéro
+    resetPlayerVotes(pseudo);
   };
 
   const updatePlayerVote = (pseudo, tourNum, selection) => {
@@ -135,7 +135,7 @@ export function AppProvider({ children }) {
         tour,
         finaleStarted,
         addPlayer,
-        resetPlayerVotes,  // <-- dispo si besoin autre part
+        resetPlayerVotes,
         updatePlayerVote,
         updateAdminSelections,
         updateTour,
@@ -145,6 +145,10 @@ export function AppProvider({ children }) {
       }}
     >
       {children}
+    </AppContext.Provider>
+  );
+}
+{children}
     </AppContext.Provider>
   );
 }
