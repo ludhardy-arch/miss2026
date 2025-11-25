@@ -42,14 +42,14 @@ export function calculatePoints(playerVotes, adminSelections) {
   let total = 0;
 
   // ----------------------------------------------------------
-  // 🔵 TOUR 1 — +3 pts par bonne miss
+  // 🔵 TOUR 1 — +5 pts par bonne miss
   // ----------------------------------------------------------
   t1P.forEach((miss) => {
     if (t1A.includes(miss)) total += 5;
   });
 
   // ----------------------------------------------------------
-  // 🟩 TOUR 2 — +6 pts (verte) / +3 pts (jaune)
+  // 🟩 TOUR 2 — +10 pts (verte) / +5 pts (jaune)
   // ----------------------------------------------------------
   t2P.forEach((miss) => {
     if (!t2A.includes(miss)) return; // mauvaise au T2 → 0
