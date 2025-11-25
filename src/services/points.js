@@ -45,7 +45,7 @@ export function calculatePoints(playerVotes, adminSelections) {
   // 🔵 TOUR 1 — +3 pts par bonne miss
   // ----------------------------------------------------------
   t1P.forEach((miss) => {
-    if (t1A.includes(miss)) total += 3;
+    if (t1A.includes(miss)) total += 5;
   });
 
   // ----------------------------------------------------------
@@ -56,8 +56,8 @@ export function calculatePoints(playerVotes, adminSelections) {
 
     const isGreen = t1P.includes(miss) && t1A.includes(miss); // bonne T1 + T2
 
-    if (isGreen) total += 6;
-    else total += 3; // jaune
+    if (isGreen) total += 10;
+    else total += 5; // jaune
   });
 
   // ----------------------------------------------------------
@@ -77,11 +77,11 @@ export function calculatePoints(playerVotes, adminSelections) {
 
       // Points selon la place
       const pointsTable = {
-        1: { green: 20, yellow: 8, neutral: 4 },
-        2: { green: 12, yellow: 6, neutral: 3 },
-        3: { green: 10, yellow: 5, neutral: 2 },
-        4: { green: 6, yellow: 3, neutral: 1 },
-        5: { green: 6, yellow: 3, neutral: 1 },
+        1: { green: 20, yellow: 10, neutral: 5 },
+        2: { green: 12, yellow: 6, neutral: 4 },
+        3: { green: 10, yellow: 5, neutral: 3 },
+        4: { green: 6, yellow: 3, neutral: 2 },
+        5: { green: 6, yellow: 3, neutral: 2 },
       };
 
       total += pointsTable[adminRank][color];
