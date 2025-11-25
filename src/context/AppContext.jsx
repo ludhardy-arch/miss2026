@@ -77,12 +77,20 @@ export function AppProvider({ children }) {
     };
   }, []);
 
-  // FUNCTIONS
-  const addPlayer = (pseudo) => {
+  // ⭐⭐ RESET DES VOTES D’UN JOUEUR ⭐⭐
+  const resetPlayerVotes = (pseudo) => {
     update(ref(database, `rooms/miss2026/players/${pseudo}`), {
+      tour1: [],
+      tour2: [],
+      tour3: [],
       connected: true,
       lastSeen: Date.now(),
     });
+  };
+
+  // ⭐ addPlayer modifié pour RESET AUTO à chaque connexion ⭐
+  const addPlayer = (pseudo) => {
+    resetPlayerVotes(pseudo); // <-- le joueur repart TOUJOURS à zéro
   };
 
   const updatePlayerVote = (pseudo, tourNum, selection) => {
@@ -103,7 +111,6 @@ export function AppProvider({ children }) {
   const updateVotesOpen = (state) =>
     set(ref(database, "rooms/miss2026/votesOpen"), state);
 
-  // ⭐ NEW : START/STOP SHOW FINAL ⭐
   const updateFinaleStarted = (state) =>
     set(ref(database, "rooms/miss2026/finaleStarted"), state);
 
@@ -128,6 +135,7 @@ export function AppProvider({ children }) {
         tour,
         finaleStarted,
         addPlayer,
+        resetPlayerVotes,  // <-- dispo si besoin autre part
         updatePlayerVote,
         updateAdminSelections,
         updateTour,
