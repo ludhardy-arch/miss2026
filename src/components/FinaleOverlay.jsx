@@ -1,20 +1,22 @@
 // src/components/FinaleOverlay.jsx
 
-import React, { useEffect, useMemo, useState, useContext } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useContext,
+} from "react";
 import confetti from "canvas-confetti";
 import { calculatePoints } from "../services/points";
 import { AppContext } from "../context/AppContext";
 
-// -----------------------
-// STYLES DE BASE
-// -----------------------
-const baseStyles = {
+const styles = {
   overlay: {
     position: "fixed",
     inset: 0,
     zIndex: 9999,
     background:
-      "radial-gradient(circle at top, #150817 0, #05030a 40%, #000 100%)",
+      "radial-gradient(circle at top, #24163b 0, #05030a 40%, #000 100%)",
     color: "white",
     display: "flex",
     justifyContent: "center",
@@ -22,26 +24,110 @@ const baseStyles = {
     padding: 20,
   },
   inner: {
-    maxWidth: 1000,
+    maxWidth: 900,
     width: "100%",
     textAlign: "center",
     position: "relative",
-    overflow: "hidden",
-    borderRadius: 20,
-    boxShadow: "0 0 40px rgba(0,0,0,0.9)",
-    background:
-      "radial-gradient(circle at top, rgba(255,255,255,0.04), rgba(0,0,0,0.9))",
   },
   title: {
-    fontSize: 28,
-    marginBottom: 8,
+    fontSize: 32,
+    marginBottom: 16,
     textTransform: "uppercase",
     letterSpacing: 4,
   },
   subtitle: {
     fontSize: 18,
     opacity: 0.8,
-    marginBottom: 12,
+    marginBottom: 20,
+  },
+  countdown: {
+    fontSize: 80,
+    fontWeight: "bold",
+  },
+  listContainer: {
+    marginTop: 20,
+    maxHeight: 400,
+    overflowY: "auto",
+    padding: "0 10px",
+  },
+  row: {
+    padding: "8px 12px",
+    marginBottom: 6,
+    borderRadius: 8,
+    background: "rgba(0,0,0,0.5)",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    fontSize: 18,
+  },
+  rowRank: {
+    fontWeight: "bold",
+    marginRight: 8,
+  },
+  rowName: {
+    flex: 1,
+    textAlign: "left",
+  },
+  rowPoints: {
+    fontWeight: "bold",
+    minWidth: 80,
+    textAlign: "right",
+  },
+  podiumWrapper: {
+    marginTop: 30,
+  },
+  podiumTitle: {
+    fontSize: 28,
+    marginBottom: 16,
+  },
+  podium: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "flex-end",
+    gap: 16,
+    marginTop: 20,
+  },
+  podiumCol: (height, colorType) => {
+    let gradient;
+    if (colorType === "gold") {
+      gradient = "linear-gradient(180deg, #ffd700, #b8860b)";
+    } else if (colorType === "silver") {
+      gradient = "linear-gradient(180deg, #dcdcdc, #808080)";
+    } else {
+      gradient = "linear-gradient(180deg, #cd7f32, #5e3b1f)"; // bronze
+    }
+
+    return {
+      width: 120,
+      height,
+      borderRadius: "18px 18px 0 0",
+      background: gradient,
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "flex-end",
+      alignItems: "center",
+      padding: "12px 8px",
+      boxShadow:
+        colorType === "gold"
+          ? "0 0 25px rgba(255,215,0,0.8)"
+          : "0 0 15px rgba(0,0,0,0.6)",
+      position: "relative",
+      overflow: "hidden",
+    };
+  },
+  podiumName: {
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  podiumPoints: {
+    fontSize: 14,
+    opacity: 0.9,
+  },
+  crown: {
+    position: "absolute",
+    top: -40,
+    fontSize: 32,
+    filter: "drop-shadow(0 0 8px rgba(255,215,0,0.9))",
   },
   quitButton: {
     position: "absolute",
@@ -57,26 +143,59 @@ const baseStyles = {
   },
 };
 
-// PHASES : countdown -> list -> podium
-const PHASES = {
-  COUNTDOWN: "countdown",
-  LIST_REVEAL: "list-reveal",
-  PODIUM: "podium",
-};
-
-const COUNTDOWN_START = 5;
+const keyframes = `
+@keyframes sponsorFadeIn {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes logoPop {
+  0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+  60% { transform: scale(1.08) rotate(2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); }
+}
+@keyframes winnerPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+@keyframes cardDrop {
+  0% { opacity: 0; transform: translateY(-30px); }
+  70% { opacity: 1; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes podiumRise {
+  0% { opacity: 0; transform: translateY(60px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInLeft {
+  0% { opacity: 0; transform: translateX(-80px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+@keyframes goldShine {
+  0% { background-position: -200px 0; }
+  100% { background-position: 200px 0; }
+}
+@keyframes crownDrop {
+  0% { transform: translateY(-60px) scale(0.8); opacity: 0; }
+  60% { transform: translateY(4px) scale(1.05); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes flashScreen {
+  0% { opacity: 0; }
+  40% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+`;
 
 export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
   const { updateFinaleStarted } = useContext(AppContext) || {};
-  const [phase, setPhase] = useState(PHASES.COUNTDOWN);
-  const [countdown, setCountdown] = useState(COUNTDOWN_START);
-  const [curtainsOpen, setCurtainsOpen] = useState(false);
+  const [phase, setPhase] = useState("sponsor"); // sponsor → countdown → revealList → podium
+  const [countdown, setCountdown] = useState(5);
   const [revealedCount, setRevealedCount] = useState(0);
-  const [podiumStep, setPodiumStep] = useState(0); // 0 = pas encore / 1 = 3e / 2 = 2e / 3 = 1er
+  const [podiumStep, setPodiumStep] = useState(0); // 0 = rien, 1 = 3e, 2 = 2e, 3 = 1er
+  const [flash, setFlash] = useState(false);
 
-  // -----------------------
-  // CLASSEMENT COMPLET
-  // -----------------------
+  // Classement global (du 1er au dernier)
   const rankingDesc = useMemo(() => {
     return Object.entries(players)
       .map(([pseudo, votes]) => ({
@@ -87,672 +206,436 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
   }, [players, adminSelections]);
 
   const rankingAsc = useMemo(
-    () => [...rankingDesc].reverse(), // dernier -> premier
+    () => [...rankingDesc].reverse(), // du dernier au premier
     [rankingDesc]
   );
 
-  // joueurs du dernier jusqu'au 4e (on retire le top 3)
-  const nonTop3Asc = useMemo(() => {
-    if (rankingDesc.length <= 3) return [];
-    const nbNonTop3 = rankingDesc.length - 3;
-    return rankingAsc.slice(0, nbNonTop3); // du dernier jusqu'au 4e
-  }, [rankingAsc, rankingDesc.length]);
+  const totalPlayers = rankingDesc.length;
+  const nonTopCount = Math.max(0, totalPlayers - 3); // on révèle jusqu'au 4e
 
-  const top3 = rankingDesc.slice(0, 3); // [1er, 2e, 3e]
+  const top3 = rankingDesc.slice(0, 3);
+  const first = top3[0];
+  const second = top3[1];
+  const third = top3[2];
 
-  // -----------------------
-  // COMPTE À REBOURS
-  // -----------------------
+  // 🎬 Phase sponsor
   useEffect(() => {
-    if (phase !== PHASES.COUNTDOWN) return;
+    if (phase !== "sponsor") return;
+    const timer = setTimeout(() => setPhase("countdown"), 4000);
+    return () => clearTimeout(timer);
+  }, [phase]);
 
+  // ⏱️ Compte à rebours
+  useEffect(() => {
+    if (phase !== "countdown") return;
     if (countdown < -1) return;
 
     const timer = setTimeout(() => {
       setCountdown((prev) => prev - 1);
+      // petit flash sur chaque nombre
+      if (countdown > 0) {
+        setFlash(true);
+        setTimeout(() => setFlash(false), 250);
+      }
     }, 1000);
 
-    if (countdown === 0) {
-      // lancement ouverture rideaux + passage à la phase liste
-      setCurtainsOpen(true);
-      setTimeout(() => {
-        setPhase(PHASES.LIST_REVEAL);
-      }, 1700); // laisse le temps aux rideaux de s'ouvrir
+    if (countdown === -1) {
+      // si peu de joueurs, on peut passer directement au podium
+      if (nonTopCount === 0) {
+        setPhase("podium");
+      } else {
+        setPhase("revealList");
+      }
     }
 
     return () => clearTimeout(timer);
-  }, [phase, countdown]);
+  }, [phase, countdown, nonTopCount]);
 
-  // -----------------------
-  // RÉVÉLATION PROGRESSIVE LISTE (dernier -> 4e)
-  // -----------------------
+  // 📜 Révélation du dernier au 4ème
   useEffect(() => {
-    if (phase !== PHASES.LIST_REVEAL) return;
+    if (phase !== "revealList") return;
 
-    if (nonTop3Asc.length === 0) {
-      // s'il n'y a pas de joueurs à révéler en liste
-      setPhase(PHASES.PODIUM);
+    if (nonTopCount === 0) {
+      setPhase("podium");
       return;
     }
 
-    if (revealedCount >= nonTop3Asc.length) {
-      // tout le monde est révélé -> on passe au podium
-      const t = setTimeout(() => setPhase(PHASES.PODIUM), 1500);
+    if (revealedCount >= nonTopCount) {
+      const t = setTimeout(() => setPhase("podium"), 1500);
       return () => clearTimeout(t);
     }
 
     const interval = setInterval(() => {
       setRevealedCount((prev) => {
-        if (prev >= nonTop3Asc.length) {
+        if (prev >= nonTopCount) {
           clearInterval(interval);
           return prev;
         }
         return prev + 1;
       });
-    }, 4000); // 4 secondes entre chaque joueur
+    }, 2200); // rythme adaptatif
 
     return () => clearInterval(interval);
-  }, [phase, revealedCount, nonTop3Asc.length]);
+  }, [phase, revealedCount, nonTopCount]);
 
-  // -----------------------
-  // PODIUM : 3e -> 2e -> 1er
-  // -----------------------
+  // 🏆 Podium : 3e -> 2e -> 1er
   useEffect(() => {
-    if (phase !== PHASES.PODIUM) return;
-    if (!top3.length) return;
+    if (phase !== "podium") return;
 
     setPodiumStep(0);
+    // petite pause noire / tension avant de montrer le podium
+    const startTimer = setTimeout(() => {
+      setPodiumStep(1); // 3e
+    }, 800);
 
-    // 3ème
-    const t1 = setTimeout(() => {
-      setPodiumStep(1);
-    }, 500);
+    return () => clearTimeout(startTimer);
+  }, [phase]);
 
-    // 2ème
-    const t2 = setTimeout(() => {
-      setPodiumStep(2);
-    }, 3500);
+  // Enchaînement des steps du podium
+  useEffect(() => {
+    if (phase !== "podium") return;
 
-    // 1er + confettis
-    const t3 = setTimeout(() => {
-      setPodiumStep(3);
+    if (podiumStep === 1) {
+      const t = setTimeout(() => setPodiumStep(2), 2200);
+      return () => clearTimeout(t);
+    }
 
-      const duration = 2500;
-      const end = Date.now() + duration;
+    if (podiumStep === 2) {
+      const t = setTimeout(() => setPodiumStep(3), 2500);
+      return () => clearTimeout(t);
+    }
+  }, [phase, podiumStep]);
 
-      (function frame() {
-        confetti({
-          particleCount: 7,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0 },
-          colors: ["#ff4da6", "#ffd700", "#ffffff"],
-        });
-        confetti({
-          particleCount: 7,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1 },
-          colors: ["#ff4da6", "#ffd700", "#ffffff"],
-        });
+  // 🎇 Confettis pour le 1er
+  useEffect(() => {
+    if (phase !== "podium" || podiumStep !== 3) return;
 
-        if (Date.now() < end) {
-          requestAnimationFrame(frame);
-        }
-      })();
-    }, 7000);
+    const duration = 3000;
+    const end = Date.now() + duration;
 
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
-  }, [phase, top3.length]);
+    (function frame() {
+      confetti({
+        particleCount: 6,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+      });
+      confetti({
+        particleCount: 6,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+      });
 
-  // -----------------------
-  // QUITTER LE SHOW
-  // -----------------------
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    })();
+  }, [phase, podiumStep]);
+
   const handleQuit = () => {
     if (
       !window.confirm(
-        "Quitter le show final ? Les joueurs ne verront plus l'animation."
+        "Quitter le show final ? Les joueurs ne verront plus le classement animé."
       )
     )
       return;
-
-    if (updateFinaleStarted) updateFinaleStarted(false);
+    if (updateFinaleStarted) {
+      updateFinaleStarted(false);
+    }
   };
 
-  // -----------------------
-  // AFFICHAGES PAR PHASE
-  // -----------------------
+  // ----------------------
+  // RENDUS PHASES
+  // ----------------------
 
-  const renderCountdown = () => {
-    const text =
-      countdown > 0 ? countdown : countdown === 0 ? "RÉSULTAT !!!" : "";
+  const renderSponsor = () => (
+    <div style={{ animation: "sponsorFadeIn 0.7s ease-out" }}>
+      <h2 style={{ fontSize: 26, marginBottom: 10 }}>
+        Cette finale Miss 2026 vous est présentée par…
+      </h2>
 
-    return (
-      <div className="fo-countdown-wrapper">
-        {text && (
-          <div
-            key={text} // pour relancer l'anim à chaque changement
-            className="fo-countdown-number fo-neon"
+      <div
+        style={{
+          marginTop: 20,
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          style={{
+            padding: "12px 26px",
+            borderRadius: 999,
+            background:
+              "radial-gradient(circle at top, #ffe066, #ffb300, #ff8800)",
+            color: "#3b1600",
+            fontWeight: "bold",
+            fontSize: 26,
+            display: "inline-flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 4,
+            animation: "logoPop 0.9s ease-out",
+          }}
+        >
+          <span>🍺 Malounette</span>
+          <span
+            style={{
+              fontSize: 12,
+              textTransform: "uppercase",
+              letterSpacing: 2,
+            }}
           >
-            {text}
-          </div>
+            La bière qui mérite sa couronne
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderCountdown = () => (
+    <>
+      <h2 style={styles.subtitle}>Préparez-vous au classement final…</h2>
+      <div style={{ position: "relative", display: "inline-block" }}>
+        <div style={styles.countdown}>
+          {countdown > 0 ? countdown : "RÉSULTAT !!!"}
+        </div>
+        {flash && (
+          <div
+            style={{
+              position: "absolute",
+              inset: "-30px",
+              background: "white",
+              opacity: 0,
+              animation: "flashScreen 0.3s ease-out",
+              pointerEvents: "none",
+            }}
+          />
         )}
       </div>
-    );
-  };
+    </>
+  );
 
-  const renderListReveal = () => {
-    const revealedPlayers = nonTop3Asc.slice(0, revealedCount);
+  const renderRevealList = () => {
+    // joueurs révélables (tous sauf le top 3)
+    const revealable = rankingAsc.slice(0, nonTopCount);
+    const visible = revealable.slice(0, revealedCount);
 
     return (
-      <div className="fo-list-wrapper">
-        <div className="fo-list-subtitle">
-          Du dernier au 4ᵉ, place par place…
-        </div>
+      <>
+        <h2 style={styles.subtitle}>
+          Du dernier joueur jusqu&apos;au 4ème…
+        </h2>
+        <div style={styles.listContainer}>
+          {visible.map((p, index) => {
+            const globalIndex = index; // index dans la liste des révélés
+            const posFromEnd = globalIndex; // 0 = dernier
+            const position = totalPlayers - posFromEnd; // 1 = meilleur
 
-        <div className="fo-list-scroll">
-          {revealedPlayers.map((p, index) => {
-            // position globale (1 = meilleur)
-            const position = rankingDesc.length - (nonTop3Asc.length - index);
-            const label = `${position}ᵉ`;
+            const label =
+              position === 1
+                ? "1er"
+                : position === 2
+                ? "2ème"
+                : position === 3
+                ? "3ème"
+                : `${position}ème`;
 
             return (
               <div
                 key={p.pseudo}
-                className="fo-list-row fo-list-row-neon"
+                style={{
+                  ...styles.row,
+                  animation: "cardDrop 0.45s ease-out",
+                  background:
+                    position <= 4
+                      ? "linear-gradient(90deg, rgba(255,215,0,0.15), rgba(0,0,0,0.7))"
+                      : "rgba(0,0,0,0.65)",
+                }}
               >
-                <span className="fo-list-rank">{label}</span>
-                <span className="fo-list-name fo-neon-text">
-                  {p.pseudo}
-                </span>
-                <span className="fo-list-points">{p.points} pts</span>
+                <span style={styles.rowRank}>{label}</span>
+                <span style={styles.rowName}>{p.pseudo}</span>
+                <span style={styles.rowPoints}>{p.points} pts</span>
               </div>
             );
           })}
         </div>
-      </div>
+      </>
     );
   };
 
   const renderPodium = () => {
-    if (!top3.length) {
+    if (top3.length === 0) {
       return (
-        <div style={{ marginTop: 30, fontSize: 18 }}>
-          Pas assez de joueurs pour afficher un podium.
+        <div style={{ marginTop: 30 }}>
+          <h2 style={styles.podiumTitle}>Pas assez de joueurs 😅</h2>
+          <p>Il faut au moins 1 joueur pour afficher un podium.</p>
         </div>
       );
     }
 
-    const [first, second, third] = top3;
-
-    const showThird = podiumStep >= 1 && third;
-    const showSecond = podiumStep >= 2 && second;
-    const showFirst = podiumStep >= 3 && first;
-
     return (
-      <div className="fo-podium-wrapper">
-        <div className="fo-podium-title">Podium final</div>
-        <div className="fo-podium-subtitle">
-          Bravo à tous, et félicitations à{" "}
-          {first && <span className="fo-neon-text">{first.pseudo}</span>} !
-        </div>
+      <div style={styles.podiumWrapper}>
+        <h2 style={styles.podiumTitle}>Podium final</h2>
 
-        {/* FLASH PAPARAZZI pour top 2 & 1 */}
-        {podiumStep >= 2 && (
-          <div className="fo-paparazzi-layer fo-paparazzi-on" />
+        {first && (
+          <div style={{ fontSize: 18, opacity: 0.85, marginBottom: 10 }}>
+            Bravo à tous, et félicitations à{" "}
+            <strong>{first.pseudo}</strong> 🏆
+          </div>
         )}
 
-        <div className="fo-podium">
+        <div style={styles.podium}>
           {/* 2ème */}
-          <div className="fo-podium-col fo-podium-col-2">
-            {showSecond && (
-              <div className="fo-podium-content fo-podium-content-2">
-                <div className="fo-medal">2ᵉ</div>
-                <div className="fo-podium-name fo-neon-text">
-                  {second.pseudo}
-                </div>
-                <div className="fo-podium-points">
-                  {second.points} pts
-                </div>
-              </div>
-            )}
-          </div>
+          {second && (
+            <div
+              style={{
+                ...styles.podiumCol(130, "silver"),
+                opacity: podiumStep >= 2 ? 1 : 0,
+                animation:
+                  podiumStep === 2
+                    ? "slideInLeft 0.6s ease-out"
+                    : podiumStep > 2
+                    ? "none"
+                    : "none",
+                transition: "opacity 0.3s ease-out",
+              }}
+            >
+              <div style={{ fontSize: 18, marginBottom: 6 }}>2ème</div>
+              <div style={styles.podiumName}>{second.pseudo}</div>
+              <div style={styles.podiumPoints}>{second.points} pts</div>
+            </div>
+          )}
 
           {/* 1er */}
-          <div className="fo-podium-col fo-podium-col-1">
-            {showFirst && (
-              <div className="fo-podium-content fo-podium-content-1">
-                <div className="fo-crown">👑</div>
-                <div className="fo-medal fo-medal-gold">1er</div>
-                <div className="fo-podium-name fo-neon-text">
-                  {first.pseudo}
+          {first && (
+            <div
+              style={{
+                ...styles.podiumCol(170, "gold"),
+                position: "relative",
+                opacity: podiumStep >= 3 ? 1 : 0,
+                animation:
+                  podiumStep === 3
+                    ? "podiumRise 0.6s ease-out"
+                    : podiumStep > 3
+                    ? "none"
+                    : "none",
+                transition: "opacity 0.3s ease-out",
+              }}
+            >
+              {podiumStep >= 3 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: "-10px",
+                    borderRadius: "50%",
+                    background:
+                      "radial-gradient(circle, rgba(255,215,0,0.35), transparent 60%)",
+                    filter: "blur(8px)",
+                    opacity: 0.8,
+                    pointerEvents: "none",
+                  }}
+                />
+              )}
+
+              {podiumStep >= 3 && (
+                <div
+                  style={{
+                    ...styles.crown,
+                    animation: "crownDrop 0.7s ease-out",
+                  }}
+                >
+                  👑
                 </div>
-                <div className="fo-podium-points">
-                  {first.points} pts
-                </div>
+              )}
+
+              <div
+                style={{
+                  fontSize: 20,
+                  marginBottom: 6,
+                  position: "relative",
+                  zIndex: 1,
+                }}
+              >
+                1er
               </div>
-            )}
-          </div>
+
+              <div
+                style={{
+                  ...styles.podiumName,
+                  position: "relative",
+                  zIndex: 1,
+                  backgroundImage:
+                    podiumStep >= 3
+                      ? "linear-gradient(90deg, #fff7c2, #ffe066, #ffffff)"
+                      : "none",
+                  WebkitBackgroundClip:
+                    podiumStep >= 3 ? "text" : "initial",
+                  color: podiumStep >= 3 ? "transparent" : "inherit",
+                  backgroundSize: "200px 100%",
+                  animation:
+                    podiumStep >= 3
+                      ? "goldShine 2.5s linear infinite"
+                      : "none",
+                }}
+              >
+                {first.pseudo}
+              </div>
+
+              <div
+                style={{
+                  ...styles.podiumPoints,
+                  position: "relative",
+                  zIndex: 1,
+                }}
+              >
+                {first.points} pts
+              </div>
+            </div>
+          )}
 
           {/* 3ème */}
-          <div className="fo-podium-col fo-podium-col-3">
-            {showThird && (
-              <div className="fo-podium-content fo-podium-content-3">
-                <div className="fo-medal">3ᵉ</div>
-                <div className="fo-podium-name fo-neon-text">
-                  {third.pseudo}
-                </div>
-                <div className="fo-podium-points">
-                  {third.points} pts
-                </div>
-              </div>
-            )}
-          </div>
+          {third && (
+            <div
+              style={{
+                ...styles.podiumCol(110, "bronze"),
+                opacity: podiumStep >= 1 ? 1 : 0,
+                animation:
+                  podiumStep === 1
+                    ? "podiumRise 0.6s ease-out"
+                    : podiumStep > 1
+                    ? "none"
+                    : "none",
+                transition: "opacity 0.3s ease-out",
+              }}
+            >
+              <div style={{ fontSize: 18, marginBottom: 6 }}>3ème</div>
+              <div style={styles.podiumName}>{third.pseudo}</div>
+              <div style={styles.podiumPoints}>{third.points} pts</div>
+            </div>
+          )}
         </div>
       </div>
     );
   };
 
   return (
-    <div style={baseStyles.overlay}>
-      {/* KEYFRAMES & CSS LOCAL POUR LE SHOW */}
-      <style>
-        {`
-          /* ------ Rideaux rouges ------ */
-          .fo-stage {
-            position: relative;
-            overflow: hidden;
-            border-radius: 20px;
-            min-height: 520px;
-            padding: 50px 20px 30px;
-          }
+    <div style={styles.overlay}>
+      <style>{keyframes}</style>
 
-          .fo-curtains {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 20;
-            display: flex;
-            justify-content: space-between;
-          }
-
-          .fo-curtain {
-            width: 52%;
-            background: radial-gradient(circle at top, #ff4d4d 0, #b30000 45%, #4d0000 100%);
-            box-shadow: 0 0 25px rgba(0,0,0,0.9);
-            transition: transform 1.6s ease-in-out;
-          }
-          .fo-curtain-left {
-            border-radius: 0 40px 0 0;
-            transform: translateX(0);
-          }
-          .fo-curtain-right {
-            border-radius: 40px 0 0 0;
-            transform: translateX(0);
-          }
-          .fo-curtains-open .fo-curtain-left {
-            transform: translateX(-110%);
-          }
-          .fo-curtains-open .fo-curtain-right {
-            transform: translateX(110%);
-          }
-
-          /* Petits plis verticals */
-          .fo-curtain::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background-image: repeating-linear-gradient(
-              90deg,
-              rgba(0,0,0,0.35) 0px,
-              rgba(0,0,0,0.35) 8px,
-              rgba(255,255,255,0.08) 8px,
-              rgba(255,255,255,0.08) 12px
-            );
-            mix-blend-mode: multiply;
-            opacity: 0.35;
-          }
-
-          /* ------ Décor de scène ------ */
-          .fo-stage-bg {
-            position: absolute;
-            inset: 0;
-            background:
-              radial-gradient(circle at top, rgba(255,255,255,0.08) 0, transparent 40%),
-              radial-gradient(circle at bottom, rgba(255,77,166,0.26) 0, transparent 50%),
-              radial-gradient(circle at center, #050010 0, #020006 55%, #000 100%);
-            z-index: 1;
-          }
-
-          .fo-spotlight {
-            position: absolute;
-            width: 160%;
-            height: 160%;
-            top: -20%;
-            left: -30%;
-            background: conic-gradient(
-              from 180deg,
-              rgba(255,77,166,0.0),
-              rgba(255,77,166,0.3),
-              rgba(153,102,255,0.0),
-              rgba(153,102,255,0.35),
-              rgba(255,77,166,0.0)
-            );
-            mix-blend-mode: screen;
-            opacity: 0.85;
-            filter: blur(2px);
-            animation: foSpotRotate 16s linear infinite;
-          }
-
-          .fo-ground-halo {
-            position: absolute;
-            width: 70%;
-            height: 140px;
-            left: 15%;
-            bottom: 10px;
-            background: radial-gradient(ellipse at center, rgba(255,77,166,0.6), transparent 65%);
-            filter: blur(6px);
-            opacity: 0.8;
-          }
-
-          @keyframes foSpotRotate {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-
-          /* ------ Compte à rebours ------ */
-          .fo-countdown-wrapper {
-            position: relative;
-            z-index: 15;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 200px;
-          }
-
-          .fo-countdown-number {
-            font-size: 90px;
-            font-weight: 900;
-            letter-spacing: 4px;
-            animation: foCountdownPop 0.7s ease-out;
-          }
-
-          @keyframes foCountdownPop {
-            0% { transform: scale(0.3); opacity: 0; }
-            45% { transform: scale(1.4); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-          }
-
-          /* ------ Neon pink glow ------ */
-          .fo-neon {
-            color: #ffffff;
-            text-shadow:
-              0 0 8px rgba(255,77,166,0.9),
-              0 0 18px rgba(255,77,166,0.9),
-              0 0 32px rgba(255,0,133,0.9);
-          }
-
-          .fo-neon-text {
-            color: #ffffff;
-            text-shadow:
-              0 0 4px rgba(255,255,255,0.9),
-              0 0 8px rgba(255,77,166,1),
-              0 0 16px rgba(255,0,140,1),
-              0 0 34px rgba(255,0,140,0.9);
-            animation: foNeonPulse 2.6s ease-in-out infinite;
-          }
-
-          @keyframes foNeonPulse {
-            0%, 100% { text-shadow:
-              0 0 4px rgba(255,255,255,0.9),
-              0 0 8px rgba(255,77,166,0.9),
-              0 0 18px rgba(255,0,140,0.9);
-            }
-            50% { text-shadow:
-              0 0 6px rgba(255,255,255,1),
-              0 0 14px rgba(255,140,200,1),
-              0 0 30px rgba(255,0,160,1);
-            }
-          }
-
-          /* ------ Liste classement (dernier -> 4e) ------ */
-          .fo-list-wrapper {
-            position: relative;
-            z-index: 10;
-            margin-top: 10px;
-          }
-
-          .fo-list-subtitle {
-            font-size: 18px;
-            opacity: 0.9;
-            margin-bottom: 12px;
-          }
-
-          .fo-list-scroll {
-            max-height: 260px;
-            overflow-y: auto;
-            padding: 0 12px 4px;
-          }
-
-          .fo-list-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 12px;
-            margin-bottom: 6px;
-            border-radius: 999px;
-            background: linear-gradient(
-              90deg,
-              rgba(10,0,20,0.85),
-              rgba(40,0,60,0.9),
-              rgba(10,0,20,0.85)
-            );
-            box-shadow: 0 0 12px rgba(0,0,0,0.8);
-            animation: foRowIn 0.5s ease-out;
-          }
-
-          .fo-list-row-neon {
-            border: 1px solid rgba(255,77,166,0.7);
-          }
-
-          .fo-list-rank {
-            font-weight: 700;
-            margin-right: 10px;
-            min-width: 52px;
-            text-align: left;
-          }
-
-          .fo-list-name {
-            flex: 1;
-            text-align: left;
-            font-size: 18px;
-          }
-
-          .fo-list-points {
-            min-width: 80px;
-            text-align: right;
-            font-weight: 600;
-            opacity: 0.9;
-          }
-
-          @keyframes foRowIn {
-            from { transform: translateY(16px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-          }
-
-          /* ------ Podium coupe du monde ------ */
-          .fo-podium-wrapper {
-            position: relative;
-            zIndex: 10;
-            margin-top: 20px;
-            padding: 10px 10px 20px;
-          }
-
-          .fo-podium-title {
-            font-size: 24px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 6px;
-          }
-
-          .fo-podium-subtitle {
-            font-size: 16px;
-            opacity: 0.9;
-          }
-
-          .fo-podium {
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            gap: 16px;
-            margin-top: 26px;
-          }
-
-          .fo-podium-col {
-            position: relative;
-            width: 140px;
-            border-radius: 18px 18px 0 0;
-            background: linear-gradient(180deg, #444, #111);
-            box-shadow: 0 0 16px rgba(0,0,0,0.9);
-            overflow: hidden;
-          }
-
-          .fo-podium-col-1 {
-            height: 200px;
-            background: linear-gradient(180deg, #ffd700, #b8860b);
-            box-shadow: 0 0 30px rgba(255,215,0,0.8);
-            animation: foPodiumRise 0.9s ease-out forwards;
-          }
-
-          .fo-podium-col-2 {
-            height: 170px;
-            background: linear-gradient(180deg, #e0e0e0, #888);
-            animation: foPodiumRise 0.9s ease-out forwards;
-          }
-
-          .fo-podium-col-3 {
-            height: 150px;
-            background: linear-gradient(180deg, #cd7f32, #7a4b1e);
-            animation: foPodiumRise 0.9s ease-out forwards;
-          }
-
-          @keyframes foPodiumRise {
-            from { transform: translateY(80px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-          }
-
-          .fo-podium-content {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
-            padding: 14px 8px;
-          }
-
-          .fo-podium-content-1 {
-            animation: foWinnerPulse 1.8s ease-in-out infinite;
-          }
-
-          .fo-medal {
-            font-weight: 800;
-            margin-bottom: 4px;
-          }
-
-          .fo-medal-gold {
-            text-shadow: 0 0 8px rgba(255,215,0,0.9);
-          }
-
-          .fo-podium-name {
-            font-size: 18px;
-            margin-bottom: 4px;
-          }
-
-          .fo-podium-points {
-            font-size: 14px;
-            opacity: 0.9;
-          }
-
-          .fo-crown {
-            position: absolute;
-            top: -32px;
-            font-size: 32px;
-            animation: foCrownDrop 1s ease-out forwards;
-            filter: drop-shadow(0 0 8px rgba(255,215,0,1));
-          }
-
-          @keyframes foCrownDrop {
-            0% { transform: translateY(-40px) scale(0.4); opacity: 0; }
-            60% { transform: translateY(4px) scale(1.1); opacity: 1; }
-            100% { transform: translateY(0) scale(1); opacity: 1; }
-          }
-
-          @keyframes foWinnerPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.03); }
-          }
-
-          /* ------ Paparazzi flashes ------ */
-          .fo-paparazzi-layer {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 5;
-            opacity: 0;
-          }
-
-          .fo-paparazzi-on {
-            animation: foPaparazziFlashes 2.8s linear infinite;
-          }
-
-          @keyframes foPaparazziFlashes {
-            0%, 8%, 16%, 100% { opacity: 0; }
-            4%, 12% { opacity: 0.9; background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.9), transparent 55%); }
-            20% { opacity: 0.8; background: radial-gradient(circle at 70% 35%, rgba(255,255,255,0.85), transparent 55%); }
-            40% { opacity: 0.7; background: radial-gradient(circle at 30% 70%, rgba(255,255,255,0.8), transparent 55%); }
-            60% { opacity: 0.65; background: radial-gradient(circle at 80% 80%, rgba(255,255,255,0.75), transparent 55%); }
-          }
-        `}
-      </style>
-
-      <div style={baseStyles.inner}>
+      <div style={styles.inner}>
         {isAdmin && (
-          <button style={baseStyles.quitButton} onClick={handleQuit}>
+          <button style={styles.quitButton} onClick={handleQuit}>
             Quitter le show
           </button>
         )}
 
-        <h1 style={baseStyles.title}>Classement officiel des joueurs</h1>
-        <div style={baseStyles.subtitle}>
-          Miss 2026 — présenté par la bière Malounette 🍺
-        </div>
+        <h1 style={styles.title}>Classement officiel des joueurs</h1>
 
-        <div className="fo-stage">
-          {/* Décor de scène */}
-          <div className="fo-stage-bg" />
-          <div className="fo-spotlight" />
-          <div className="fo-ground-halo" />
-
-          {/* Phases de contenu */}
-          {phase === PHASES.COUNTDOWN && renderCountdown()}
-          {phase === PHASES.LIST_REVEAL && renderListReveal()}
-          {phase === PHASES.PODIUM && renderPodium()}
-
-          {/* Rideaux */}
-          <div
-            className={
-              "fo-curtains " + (curtainsOpen ? "fo-curtains-open" : "")
-            }
-          >
-            <div className="fo-curtain fo-curtain-left" />
-            <div className="fo-curtain fo-curtain-right" />
-          </div>
-        </div>
+        {phase === "sponsor" && renderSponsor()}
+        {phase === "countdown" && renderCountdown()}
+        {phase === "revealList" && renderRevealList()}
+        {phase === "podium" && renderPodium()}
       </div>
     </div>
   );
