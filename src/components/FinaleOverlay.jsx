@@ -448,3 +448,4 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
     </div>
   );
 }
+
