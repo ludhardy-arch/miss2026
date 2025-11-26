@@ -39,6 +39,10 @@ const styles = {
     fontSize: 80,
     fontWeight: "bold",
   },
+  countResult: {
+    fontSize: 40,
+    marginTop: 10,
+  },
   listContainer: {
     marginTop: 20,
     maxHeight: 400,
@@ -127,7 +131,7 @@ const styles = {
   },
 };
 
-const keyframes = `
+const introKeyframes = `
 @keyframes sponsorFadeIn {
   0% { opacity: 0; transform: translateY(20px); }
   100% { opacity: 1; transform: translateY(0); }
@@ -137,18 +141,15 @@ const keyframes = `
   60% { transform: scale(1.08) rotate(2deg); opacity: 1; }
   100% { transform: scale(1) rotate(0); }
 }
+@keyframes haloGlow {
+  0% { box-shadow: 0 0 6px rgba(255,215,0,0.4); }
+  50% { box-shadow: 0 0 22px rgba(255,215,0,1); }
+  100% { box-shadow: 0 0 6px rgba(255,215,0,0.4); }
+}
 @keyframes winnerPulse {
   0% { transform: scale(1); }
-  50% { transform: scale(1.04); }
+  50% { transform: scale(1.03); }
   100% { transform: scale(1); }
-}
-@keyframes cardDrop {
-  0% { opacity: 0; transform: translateY(-20px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-@keyframes podiumPop {
-  0% { opacity: 0; transform: translateY(40px); }
-  100% { opacity: 1; transform: translateY(0); }
 }
 `;
 
@@ -157,9 +158,8 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
   const [phase, setPhase] = useState("sponsor"); // sponsor → countdown → reveal → podium
   const [countdown, setCountdown] = useState(5);
   const [revealedCount, setRevealedCount] = useState(0);
-  const [podiumStep, setPodiumStep] = useState(0); // 0 rien, 1 = 3e, 2 = 2e, 3 = 1er
 
-  // Classement global (du 1er au dernier)
+  // Calcul du classement global (du 1er au dernier)
   const rankingDesc = useMemo(() => {
     return Object.entries(players)
       .map(([pseudo, votes]) => ({
@@ -176,20 +176,17 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
   );
 
   const totalPlayers = rankingDesc.length;
-  const nonTopCount = Math.max(0, totalPlayers - 3); // joueurs du dernier au 4e
-  const top3 = rankingDesc.slice(0, 3);
-  const first = top3[0];
-  const second = top3[1];
-  const third = top3[2];
 
-  // 🎬 Phase sponsor (inchangé)
+  // 🎬 Phase sponsor Malounette avant le compte à rebours
   useEffect(() => {
     if (phase !== "sponsor") return;
-    const timer = setTimeout(() => setPhase("countdown"), 4000);
+    const timer = setTimeout(() => {
+      setPhase("countdown");
+    }, 4000); // 4 secondes d'écran sponsor
     return () => clearTimeout(timer);
   }, [phase]);
 
-  // ⏱️ Compte à rebours (on garde ta logique)
+  // ⏱️ Compte à rebours 5 → 4 → … → 1 → Résultat !!!
   useEffect(() => {
     if (phase !== "countdown") return;
     if (countdown < -1) return;
@@ -199,76 +196,52 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
     }, 1000);
 
     if (countdown === -1) {
-      // s'il n'y a pas assez de joueurs pour faire un reveal,
-      // on passe directement au podium
-      setPhase(nonTopCount > 0 ? "reveal" : "podium");
+      // passage automatique à la phase reveal
+      setPhase("reveal");
     }
 
     return () => clearTimeout(timer);
-  }, [phase, countdown, nonTopCount]);
+  }, [phase, countdown]);
 
-  // 📜 Révélation du dernier jusqu'au 4e
+  // 📜 Révélation du dernier au premier toutes les 4 secondes
   useEffect(() => {
     if (phase !== "reveal") return;
-
-    // Aucun joueur "hors top3" → passer direct au podium
-    if (nonTopCount === 0) {
-      setPhase("podium");
-      return;
-    }
-
-    // Tous les joueurs hors top3 ont été révélés
-    if (revealedCount >= nonTopCount) {
+    if (revealedCount >= totalPlayers) {
+      // une fois tout le monde révélé → podium
       const t = setTimeout(() => setPhase("podium"), 1500);
       return () => clearTimeout(t);
     }
 
     const interval = setInterval(() => {
       setRevealedCount((prev) => {
-        if (prev >= nonTopCount) {
+        if (prev >= totalPlayers) {
           clearInterval(interval);
           return prev;
         }
         return prev + 1;
       });
-    }, 2200); // rythme : ~2.2s par joueur
+    }, 4000); // 4 secondes entre chaque joueur
 
     return () => clearInterval(interval);
-  }, [phase, revealedCount, nonTopCount]);
+  }, [phase, revealedCount, totalPlayers]);
 
-  // 🏆 Podium : 3e → 2e → 1er
+  // 🎇 Feux d’artifice + confettis sur le podium
   useEffect(() => {
     if (phase !== "podium") return;
 
-    setPodiumStep(0);
-
-    const t1 = setTimeout(() => setPodiumStep(1), 500); // 3e
-    const t2 = setTimeout(() => setPodiumStep(2), 500 + 2200); // 2e
-    const t3 = setTimeout(() => setPodiumStep(3), 500 + 2200 + 2200); // 1er
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
-  }, [phase]);
-
-  // 🎇 Confettis pour le 1er
-  useEffect(() => {
-    if (phase !== "podium" || podiumStep !== 3) return;
-
-    const duration = 2500;
+    // petit burst de confettis
+    const duration = 3000;
     const end = Date.now() + duration;
 
     (function frame() {
       confetti({
-        particleCount: 6,
+        particleCount: 4,
         angle: 60,
         spread: 55,
         origin: { x: 0 },
       });
       confetti({
-        particleCount: 6,
+        particleCount: 4,
         angle: 120,
         spread: 55,
         origin: { x: 1 },
@@ -278,7 +251,7 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
         requestAnimationFrame(frame);
       }
     })();
-  }, [phase, podiumStep]);
+  }, [phase]);
 
   const handleQuit = () => {
     if (
@@ -293,7 +266,12 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
     }
   };
 
-  // ------------------ RENDUS ------------------
+  // Top 3 pour le podium
+  const top3 = rankingDesc.slice(0, 3);
+
+  // ------------------------------------------------
+  // RENDU DES DIFFÉRENTES PHASES
+  // ------------------------------------------------
 
   const renderSponsor = () => (
     <div style={{ animation: "sponsorFadeIn 0.7s ease-out" }}>
@@ -349,19 +327,18 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
   );
 
   const renderReveal = () => {
-    // On ne révèle que les joueurs hors top3 (du dernier jusqu'au 4e)
-    const revealable = rankingAsc.slice(0, nonTopCount);
-    const visible = revealable.slice(0, revealedCount);
+    const revealedPlayers = rankingAsc.slice(0, revealedCount);
 
     return (
       <>
-        <h2 style={styles.subtitle}>
-          Classement du dernier jusqu&apos;au 4ème…
-        </h2>
+        <h2 style={styles.subtitle}>Du dernier au premier…</h2>
         <div style={styles.listContainer}>
-          {visible.map((p, index) => {
+          {revealedPlayers.map((p, index) => {
             const globalIndex = index; // index dans la liste ascendante
             const position = totalPlayers - globalIndex; // 1 = meilleur
+
+            const isBottom = position > 3;
+            const isTop3 = position <= 3;
 
             const label =
               position === 1
@@ -377,11 +354,14 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
                 key={p.pseudo}
                 style={{
                   ...styles.row,
-                  animation: "cardDrop 0.4s ease-out",
-                  background:
-                    position <= 4
-                      ? "linear-gradient(90deg, rgba(255,215,0,0.15), rgba(0,0,0,0.7))"
-                      : "rgba(0,0,0,0.65)",
+                  background: isTop3
+                    ? "linear-gradient(90deg, rgba(255,215,0,0.2), rgba(0,0,0,0.7))"
+                    : "rgba(0,0,0,0.6)",
+                  transform: isTop3 ? "scale(1.02)" : "scale(1)",
+                  border:
+                    position === 1
+                      ? "1px solid rgba(255,215,0,0.8)"
+                      : "1px solid transparent",
                 }}
               >
                 <span style={styles.rowRank}>{label}</span>
@@ -396,37 +376,23 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
   };
 
   const renderPodium = () => {
-    if (top3.length === 0) {
-      return (
-        <div style={{ marginTop: 30 }}>
-          <h2 style={styles.podiumTitle}>Pas assez de joueurs 😅</h2>
-          <p>Il faut au moins un joueur pour afficher un podium.</p>
-        </div>
-      );
-    }
+    if (top3.length === 0) return null;
+
+    const [first, second, third] = top3;
 
     return (
       <div style={styles.podiumWrapper}>
         <h2 style={styles.podiumTitle}>Podium final</h2>
-        {first && (
-          <div style={{ fontSize: 18, opacity: 0.85 }}>
-            Bravo à tous, et félicitations à{" "}
-            <strong>{first.pseudo}</strong> 🎉
-          </div>
-        )}
+
+        <div style={{ fontSize: 18, opacity: 0.85 }}>
+          Bravo à tous, et félicitations à{" "}
+          <strong>{first?.pseudo}</strong> 🏆
+        </div>
 
         <div style={styles.podium}>
           {/* 2ème */}
           {second && (
-            <div
-              style={{
-                ...styles.podiumCol(130, false),
-                opacity: podiumStep >= 2 ? 1 : 0,
-                animation:
-                  podiumStep === 2 ? "podiumPop 0.5s ease-out" : "none",
-                transition: "opacity 0.3s ease-out",
-              }}
-            >
+            <div style={styles.podiumCol(130, false)}>
               <div style={{ fontSize: 18, marginBottom: 6 }}>2ème</div>
               <div style={styles.podiumName}>{second.pseudo}</div>
               <div style={styles.podiumPoints}>{second.points} pts</div>
@@ -438,15 +404,10 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
             <div
               style={{
                 ...styles.podiumCol(170, true),
-                opacity: podiumStep >= 3 ? 1 : 0,
-                animation:
-                  podiumStep === 3
-                    ? "podiumPop 0.6s ease-out, winnerPulse 1.6s ease-in-out infinite"
-                    : "none",
-                transition: "opacity 0.3s ease-out",
+                animation: "winnerPulse 1.7s ease-in-out infinite",
               }}
             >
-              {podiumStep >= 3 && <div style={styles.crown}>👑</div>}
+              <div style={styles.crown}>👑</div>
               <div style={{ fontSize: 20, marginBottom: 6 }}>1er</div>
               <div style={styles.podiumName}>{first.pseudo}</div>
               <div style={styles.podiumPoints}>{first.points} pts</div>
@@ -455,15 +416,7 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
 
           {/* 3ème */}
           {third && (
-            <div
-              style={{
-                ...styles.podiumCol(110, false),
-                opacity: podiumStep >= 1 ? 1 : 0,
-                animation:
-                  podiumStep === 1 ? "podiumPop 0.5s ease-out" : "none",
-                transition: "opacity 0.3s ease-out",
-              }}
-            >
+            <div style={styles.podiumCol(110, false)}>
               <div style={{ fontSize: 18, marginBottom: 6 }}>3ème</div>
               <div style={styles.podiumName}>{third.pseudo}</div>
               <div style={styles.podiumPoints}>{third.points} pts</div>
@@ -476,7 +429,7 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
 
   return (
     <div style={styles.overlay}>
-      <style>{keyframes}</style>
+      <style>{introKeyframes}</style>
 
       <div style={styles.inner}>
         {isAdmin && (
