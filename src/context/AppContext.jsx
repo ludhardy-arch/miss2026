@@ -15,6 +15,9 @@ export function AppProvider({ children }) {
   const [tour, setTourState] = useState(1);
   const [finaleStarted, setFinaleStartedState] = useState(false);
 
+  // ⭐ NOUVEAU : flash global "VOTES OUVERTS !!!"
+  const [flashVotes, setFlashVotes] = useState(0);
+
   const roomRef = ref(database, "rooms/miss2026");
 
   // ------------------------------
@@ -32,6 +35,7 @@ export function AppProvider({ children }) {
           votesOpen: false,
           tour: 1,
           finaleStarted: false,
+          flashVotes: 0, // ajout champ
         });
       },
       { onlyOnce: true }
@@ -65,6 +69,7 @@ export function AppProvider({ children }) {
     const vRef = ref(database, "rooms/miss2026/votesOpen");
     const tRef = ref(database, "rooms/miss2026/tour");
     const fRef = ref(database, "rooms/miss2026/finaleStarted");
+    const flRef = ref(database, "rooms/miss2026/flashVotes"); // ⭐ flash
 
     const unsubV = onValue(vRef, (snap) =>
       setVotesOpenState(Boolean(snap.val()))
@@ -73,11 +78,15 @@ export function AppProvider({ children }) {
     const unsubF = onValue(fRef, (snap) =>
       setFinaleStartedState(Boolean(snap.val()))
     );
+    const unsubFL = onValue(flRef, (snap) =>
+      setFlashVotes(snap.val() || 0)
+    );
 
     return () => {
       unsubV();
       unsubT();
       unsubF();
+      unsubFL();
     };
   }, []);
 
@@ -99,7 +108,10 @@ export function AppProvider({ children }) {
   };
 
   const updatePlayerVote = (pseudo, tourNum, selection) => {
-    set(ref(database, `rooms/miss2026/players/${pseudo}/tour${tourNum}`), selection);
+    set(
+      ref(database, `rooms/miss2026/players/${pseudo}/tour${tourNum}`),
+      selection
+    );
   };
 
   const updateAdminSelections = (num, list) =>
@@ -116,6 +128,12 @@ export function AppProvider({ children }) {
   const updateFinaleStarted = (state) =>
     set(ref(database, "rooms/miss2026/finaleStarted"), state);
 
+  // ⭐ NOUVEAU : déclencher un flash global
+  const triggerFlashVotes = () => {
+    const now = Date.now();
+    set(ref(database, "rooms/miss2026/flashVotes"), now);
+  };
+
   const resetGame = () => {
     if (!window.confirm("Réinitialiser toute la partie ?")) return;
 
@@ -125,6 +143,7 @@ export function AppProvider({ children }) {
       votesOpen: false,
       tour: 1,
       finaleStarted: false,
+      flashVotes: 0,
     });
   };
 
@@ -139,6 +158,7 @@ export function AppProvider({ children }) {
         votesOpen,
         tour,
         finaleStarted,
+        flashVotes,          // ⭐ nouveau
         addPlayer,
         resetPlayerVotes,
         updatePlayerVote,
@@ -146,6 +166,7 @@ export function AppProvider({ children }) {
         updateTour,
         updateVotesOpen,
         updateFinaleStarted,
+        triggerFlashVotes,   // ⭐ nouveau
         resetGame,
       }}
     >
