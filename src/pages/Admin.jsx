@@ -4,6 +4,7 @@ import React, { useContext, useState, useEffect } from "react";
 import { AppContext } from "../context/AppContext";
 import Leaderboard from "../components/Leaderboard";
 import FinaleOverlay from "../components/FinaleOverlay";
+import ChatBubble from "../components/ChatBubble"; // ⭐ AJOUT ICI ⭐
 import { CANDIDATES } from "../data/candidates";
 
 // Petite animation douce pour "VOTES OUVERTS !!!"
@@ -29,8 +30,8 @@ export default function Admin({ user }) {
     updateFinaleStarted,
   } = useContext(AppContext);
 
-  const [selection, setSelection] = useState([]);   // tours 1 & 2
-  const [ranking, setRanking] = useState({});       // tour 3
+  const [selection, setSelection] = useState([]);   
+  const [ranking, setRanking] = useState({});       
 
   // Charger sélection / classement existant
   useEffect(() => {
@@ -45,7 +46,7 @@ export default function Admin({ user }) {
     }
   }, [tour, adminSelections]);
 
-  // IDs des candidates selon le tour
+  // IDs candidates
   const candidateIds =
     tour === 1
       ? CANDIDATES.map((m) => m.id)
@@ -53,7 +54,6 @@ export default function Admin({ user }) {
       ? adminSelections.tour1 || []
       : adminSelections.tour2 || [];
 
-  // Objets candidates
   const candidates = candidateIds
     .map((id) => CANDIDATES.find((m) => m.id === id))
     .filter(Boolean);
@@ -78,9 +78,8 @@ export default function Admin({ user }) {
     return "4ème dauphine";
   };
 
-  // Validation tour 1 / 2 / 3
+  // Validation tour 1/2/3
   const handleValidate = () => {
-    // TOURS 1 & 2
     if (tour < 3) {
       if (selection.length !== maxSelect) {
         alert(`Vous devez sélectionner ${maxSelect} miss.`);
@@ -91,9 +90,7 @@ export default function Admin({ user }) {
         !window.confirm(
           `Confirmer la sélection du tour ${tour} ? Cette action est définitive.`
         )
-      ) {
-        return;
-      }
+      ) return;
 
       updateAdminSelections(tour, selection);
       alert("Tour validé !");
@@ -101,7 +98,7 @@ export default function Admin({ user }) {
       return;
     }
 
-    // TOUR 3 — classement final
+    // Tour 3
     const ranks = Object.values(ranking).filter(Boolean);
     if (ranks.length !== 5) {
       alert("Classez les 5 miss de la 1ère à la 5ème place.");
@@ -109,19 +106,12 @@ export default function Admin({ user }) {
     }
 
     const needed = [1, 2, 3, 4, 5];
-    const ok = needed.every((r) => ranks.includes(r));
-    if (!ok) {
+    if (!needed.every((r) => ranks.includes(r))) {
       alert("Chaque place doit être utilisée une seule fois.");
       return;
     }
 
-    if (
-      !window.confirm(
-        "Confirmer le classement final ? Cette action est définitive."
-      )
-    ) {
-      return;
-    }
+    if (!window.confirm("Confirmer le classement final ? Cette action est définitive.")) return;
 
     const ordered = [];
     for (let r = 1; r <= 5; r++) {
@@ -133,12 +123,10 @@ export default function Admin({ user }) {
     alert("Finale validée !");
   };
 
-  // Joueur a voté au tour courant ?
   const playerHasVoted = (p) => {
     if (!p) return false;
     const t = p[`tour${tour}`];
-    if (!t) return false;
-    return Array.isArray(t) ? t.length > 0 : Object.keys(t).length > 0;
+    return t && (Array.isArray(t) ? t.length > 0 : Object.keys(t).length > 0);
   };
 
   const getBorderClass = (id) =>
@@ -148,10 +136,8 @@ export default function Admin({ user }) {
 
   return (
     <div style={{ padding: 20, maxWidth: 1200, margin: "0 auto" }}>
-      {/* keyframes pour l'animation votes ouverts */}
       <style>{votePulseKeyframes}</style>
 
-      {/* SHOW FINAL (overlay) */}
       {finaleStarted && (
         <FinaleOverlay
           players={players}
@@ -160,10 +146,8 @@ export default function Admin({ user }) {
         />
       )}
 
-      {/* HEADER ADMIN */}
       <h1>ADMIN — {user.pseudo}</h1>
 
-      {/* BANNIÈRE VOTES OUVERTS */}
       {votesOpen && (
         <div
           style={{
@@ -171,8 +155,7 @@ export default function Admin({ user }) {
             maxWidth: 500,
             padding: "10px 18px",
             borderRadius: 999,
-            background:
-              "linear-gradient(135deg, rgba(0,200,120,0.95), rgba(0,255,180,0.95))",
+            background: "linear-gradient(135deg, rgba(0,200,120,0.95), rgba(0,255,180,0.95))",
             color: "#012",
             fontWeight: "bold",
             textAlign: "center",
@@ -188,7 +171,6 @@ export default function Admin({ user }) {
         style={{
           display: "flex",
           gap: 10,
-          alignItems: "center",
           flexWrap: "wrap",
           justifyContent: "center",
           marginBottom: 20,
@@ -198,10 +180,7 @@ export default function Admin({ user }) {
           {votesOpen ? "Fermer les votes" : "Ouvrir les votes"}
         </button>
 
-        <button
-          onClick={resetGame}
-          style={{ background: "crimson", color: "white" }}
-        >
+        <button onClick={resetGame} style={{ background: "crimson", color: "white" }}>
           RESET
         </button>
 
@@ -226,11 +205,10 @@ export default function Admin({ user }) {
           padding: 15,
           borderRadius: 12,
           background: "rgba(0,0,0,0.45)",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
         }}
       >
-        <h2 style={{ marginTop: 0 }}>Joueurs</h2>
-        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+        <h2>Joueurs</h2>
+        <ul style={{ listStyle: "none", padding: 0 }}>
           {Object.keys(players).map((pseudo) => {
             const p = players[pseudo];
             const voted = playerHasVoted(p);
@@ -240,7 +218,6 @@ export default function Admin({ user }) {
                 key={pseudo}
                 style={{
                   display: "flex",
-                  alignItems: "center",
                   justifyContent: "space-between",
                   fontSize: 18,
                   padding: "4px 0",
@@ -255,9 +232,6 @@ export default function Admin({ user }) {
                     backgroundColor: voted ? "limegreen" : "gold",
                     borderRadius: "50%",
                     display: "inline-block",
-                    boxShadow: voted
-                      ? "0 0 8px rgba(0,255,0,0.8)"
-                      : "0 0 8px rgba(255,255,0,0.8)",
                   }}
                 ></span>
               </li>
@@ -266,13 +240,11 @@ export default function Admin({ user }) {
         </ul>
       </div>
 
-      {/* TOURS 1 & 2 — SÉLECTION AVEC PHOTOS */}
+      {/* Sélection tours 1 & 2 */}
       {tour !== 3 && (
         <>
           <h2>Tour {tour} — Sélection des miss</h2>
-          <p style={{ textAlign: "center" }}>
-            Sélectionnez <b>{maxSelect}</b> miss.
-          </p>
+          <p>Sélectionnez <b>{maxSelect}</b> miss.</p>
 
           <div className="grid">
             {candidates.map((miss) => (
@@ -284,9 +256,6 @@ export default function Admin({ user }) {
                   cursor: "pointer",
                   textAlign: "center",
                   borderWidth: 5,
-                  boxShadow: selection.includes(miss.id)
-                    ? "0 0 16px rgba(76,161,255,0.9)"
-                    : "0 0 10px rgba(255,255,255,0.18)",
                 }}
               >
                 <img
@@ -294,23 +263,21 @@ export default function Admin({ user }) {
                   alt={miss.label}
                   style={{
                     width: "100%",
-                    height: "auto",
                     borderRadius: 10,
                     marginBottom: 8,
-                    objectFit: "cover",
                   }}
                 />
-                <div style={{ fontSize: 18 }}>{miss.label}</div>
+                <div>{miss.label}</div>
               </div>
             ))}
           </div>
         </>
       )}
 
-      {/* TOUR 3 — CLASSEMENT FINAL AVEC PHOTOS */}
+      {/* Tour 3 */}
       {tour === 3 && (
         <>
-          <h2>Classement final (1 → 5)</h2>
+          <h2>Classement final</h2>
 
           <div className="grid">
             {candidates.map((miss) => (
@@ -320,7 +287,6 @@ export default function Admin({ user }) {
                 style={{
                   textAlign: "center",
                   borderWidth: 5,
-                  boxShadow: "0 0 14px rgba(0,0,0,0.6)",
                 }}
               >
                 <img
@@ -328,10 +294,8 @@ export default function Admin({ user }) {
                   alt={miss.label}
                   style={{
                     width: "100%",
-                    height: "auto",
                     borderRadius: 10,
                     marginBottom: 8,
-                    objectFit: "cover",
                   }}
                 />
                 <div style={{ fontSize: 18, marginBottom: 8 }}>
@@ -342,16 +306,12 @@ export default function Admin({ user }) {
                   value={ranking[miss.id] || ""}
                   onChange={(e) => {
                     const newRank = Number(e.target.value);
-
                     setRanking((prev) => {
                       const updated = { ...prev };
-
                       delete updated[miss.id];
-
                       Object.keys(updated).forEach((mid) => {
                         if (updated[mid] === newRank) delete updated[mid];
                       });
-
                       updated[miss.id] = newRank;
                       return updated;
                     });
@@ -360,7 +320,6 @@ export default function Admin({ user }) {
                     width: "100%",
                     padding: 8,
                     borderRadius: 8,
-                    fontSize: 16,
                   }}
                 >
                   <option value="">— Choisir —</option>
@@ -380,7 +339,7 @@ export default function Admin({ user }) {
         </>
       )}
 
-      {/* BOUTON VALIDATION */}
+      {/* Validation */}
       <div style={{ textAlign: "center", marginTop: 20 }}>
         <button onClick={handleValidate}>
           Valider {tour === 3 ? "le classement" : "la sélection"}
@@ -388,6 +347,9 @@ export default function Admin({ user }) {
       </div>
 
       <Leaderboard />
+
+      {/* ⭐⭐ BULLE DE CHAT ⭐⭐ */}
+      <ChatBubble user={user} /> 
     </div>
   );
 }
