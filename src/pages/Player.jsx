@@ -286,8 +286,8 @@ export default function Player({ user }) {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <LegendItem colorClass="border-blue" text="Sélection en cours" />
-          <LegendItem colorClass="border-green" text="Bonne au tour 1" />
-          <LegendItem colorClass="border-yellow" text="Bonne au tour 2" />
+          <LegendItem colorClass="border-green" text="Bien sélectionnée au tour 1 puis 2" />
+          <LegendItem colorClass="border-yellow" text="Bien sélectionnée uniquement au tour 2" />
           <LegendItem colorClass="border-grey" text="Jamais sélectionnée" />
         </div>
       </div>
