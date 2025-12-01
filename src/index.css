@@ -66,3 +66,22 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* ----------------------------------------------------
+   🔥 ANIMATIONS FLASH "VOTES OUVERTS !!!" (AJOUT)
+----------------------------------------------------- */
+
+@keyframes flashBang {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  30% { opacity: 0.7; }
+  60% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes flashText {
+  0% { opacity: 0; transform: scale(0.8); }
+  20% { opacity: 1; transform: scale(1.25); }
+  40% { transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.9); }
+}
