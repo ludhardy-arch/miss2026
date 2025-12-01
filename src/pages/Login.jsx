@@ -11,9 +11,7 @@ export default function Login({ setUser }) {
   const navigate = useNavigate();
 
   const cleanLocalData = (pseudo) => {
-    // Nettoyage total des sauvegardes locales d’un joueur
     localStorage.removeItem("miss_user");
-
     localStorage.removeItem(`miss2026_selection_tour1_${pseudo}`);
     localStorage.removeItem(`miss2026_selection_tour2_${pseudo}`);
     localStorage.removeItem(`miss2026_ranking_tour3_${pseudo}`);
@@ -23,9 +21,7 @@ export default function Login({ setUser }) {
     if (!pseudo.trim()) return alert("Entrez un pseudo !");
     const p = pseudo.trim();
 
-    // ---------------------------------
     // ADMIN
-    // ---------------------------------
     if (password === "1234") {
       cleanLocalData(p);
       setUser({ pseudo: p, role: "admin" });
@@ -33,24 +29,16 @@ export default function Login({ setUser }) {
       return;
     }
 
-    // ---------------------------------
     // PLAYER
-    // ---------------------------------
     if (password === "ludo") {
-      // Reset complet : Firebase + localStorage
       resetPlayerVotes(p);
       cleanLocalData(p);
-
-      addPlayer(p); // recrée son profil propre
-
+      addPlayer(p);
       setUser({ pseudo: p, role: "player" });
       navigate("/player");
       return;
     }
 
-    // ---------------------------------
-    // BAD PASSWORD
-    // ---------------------------------
     alert("Mot de passe incorrect !");
   };
 
@@ -80,6 +68,7 @@ export default function Login({ setUser }) {
         Qui aura le meilleur pronostic ?
       </p>
 
+      {/* ⭐ NOUVEAU TEXTE ⭐ */}
       <p
         style={{
           fontSize: 16,
@@ -89,15 +78,23 @@ export default function Login({ setUser }) {
           marginBottom: 25,
           color: "#333",
           boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          lineHeight: "1.45",
+          fontWeight: 500,
         }}
       >
-        Quand les votes seront ouverts :
+        ⚠️ <b style={{ color: "#d20055" }}>Important :</b><br />
+        Bien attendre que <b>les votes soient ouverts</b> pour sélectionner vos miss.
         <br />
-        ✔ <b>15 miss</b> — premier tour <br />
-        ✔ <b>5 miss</b> — deuxième tour <br />
-        ✔ Puis <b>classer le top 5 final</b> ! <br />
-        <br />
-        Celui qui trouvera le plus de bonnes miss gagnera !
+        La fermeture des votes à chaque tour sera
+        <b> synchronisée avec la télévision</b> 📺✨
+        <br /><br />
+
+        🟣 <b>Premier tour :</b> sélectionner <b>15 miss</b><br />
+        🔵 <b>Deuxième tour :</b> sélectionner <b>5 miss</b><br />
+        🟡 <b>Troisième tour :</b> classer <b>les 5 finalistes</b>
+        <br /><br />
+
+        Bonne chance à tous… et que le meilleur pronostiqueur gagne ! 👑
       </p>
 
       <p
