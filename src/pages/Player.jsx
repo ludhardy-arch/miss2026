@@ -4,6 +4,7 @@ import React, { useContext, useState, useEffect } from "react";
 import { AppContext } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import Leaderboard from "../components/Leaderboard";
+import ChatBubble from "../components/ChatBubble"; // ⭐ AJOUT ICI ⭐
 import { CANDIDATES } from "../data/candidates";
 
 // Animation douce pour "VOTES OUVERTS !!!"
@@ -26,11 +27,11 @@ export default function Player({ user }) {
   } = useContext(AppContext);
 
   const navigate = useNavigate();
-  const [selection, setSelection] = useState([]); // tours 1 & 2
-  const [ranking, setRanking] = useState({});     // tour 3
+  const [selection, setSelection] = useState([]); 
+  const [ranking, setRanking] = useState({});
   const [showVoteBanner, setShowVoteBanner] = useState(true);
 
-  // Bannière réapparait à chaque nouveau tour
+  // Bannière réapparaît à chaque tour
   useEffect(() => {
     setShowVoteBanner(true);
   }, [tour]);
@@ -48,7 +49,7 @@ export default function Player({ user }) {
 
   const maxSelect = tour === 1 ? 15 : tour === 2 ? 5 : 5;
 
-  // Liste des candidates selon le tour
+  // Liste candidates selon tour
   const candidateIds =
     tour === 1
       ? CANDIDATES.map((c) => c.id)
@@ -80,21 +81,21 @@ export default function Player({ user }) {
     }
   }, [tour, hasVotedThisTour, user.pseudo]);
 
-  // Sauvegarde locale sélection tours 1 & 2
+  // Sauvegarde locale tour 1 & 2
   useEffect(() => {
     if (hasVotedThisTour || tour === 3) return;
     const key = `miss2026_selection_tour${tour}_${user.pseudo}`;
     localStorage.setItem(key, JSON.stringify(selection));
   }, [selection, tour, hasVotedThisTour, user.pseudo]);
 
-  // Sauvegarde locale classement tour 3
+  // Sauvegarde classement finale
   useEffect(() => {
     if (hasVotedThisTour || tour !== 3) return;
     const key = `miss2026_ranking_tour3_${user.pseudo}`;
     localStorage.setItem(key, JSON.stringify(ranking));
   }, [ranking, tour, hasVotedThisTour, user.pseudo]);
 
-  // Clic sélection tours 1 & 2
+  // Sélection (tour 1 & 2)
   const handleClickMiss = (id) => {
     if (tour === 3 || !votesOpen || hasVotedThisTour) return;
 
@@ -120,18 +121,13 @@ export default function Player({ user }) {
       return;
     }
 
-    // Tours 1 et 2
     if (tour === 1 || tour === 2) {
       if (selection.length !== maxSelect) {
         alert(`Tu dois sélectionner ${maxSelect} miss.`);
         return;
       }
 
-      if (
-        !window.confirm(
-          "Envoyer ton vote ? Tu ne pourras plus le modifier."
-        )
-      )
+      if (!window.confirm("Envoyer ton vote ? Tu ne pourras plus le modifier."))
         return;
 
       updatePlayerVote(user.pseudo, tour, selection);
@@ -140,7 +136,7 @@ export default function Player({ user }) {
       return;
     }
 
-    // Tour 3 : classement
+    // Finale
     if (tour === 3) {
       const ranks = Object.values(ranking).filter(Boolean);
       const nb = candidates.length;
@@ -151,25 +147,17 @@ export default function Player({ user }) {
       }
 
       const needed = Array.from({ length: nb }, (_, i) => i + 1);
-      const ok = needed.every((r) => ranks.includes(r));
-
-      if (!ok) {
+      if (!needed.every((r) => ranks.includes(r))) {
         alert("Chaque place doit être utilisée une seule fois.");
         return;
       }
 
-      if (
-        !window.confirm(
-          "Envoyer ton classement final ? Tu ne pourras plus le modifier."
-        )
-      )
+      if (!window.confirm("Envoyer ton classement final ?"))
         return;
 
       const ordered = [];
       for (let r = 1; r <= nb; r++) {
-        const entry = Object.entries(ranking).find(
-          ([, rank]) => rank === r
-        );
+        const entry = Object.entries(ranking).find(([, rank]) => rank === r);
         if (entry) ordered.push(Number(entry[0]));
       }
 
@@ -179,7 +167,7 @@ export default function Player({ user }) {
     }
   };
 
-  // Couleurs des cadres
+  // Couleurs cadres
   const getBorderColor = (id) => {
     const t1P = playerData.tour1 || [];
     const t2P = playerData.tour2 || [];
@@ -190,20 +178,16 @@ export default function Player({ user }) {
       return "blue";
     }
 
-    const isGreen = t1P.includes(id) && t1A.includes(id);
-    if (isGreen) return "green";
-
-    const isYellow = !isGreen && t2P.includes(id) && t2A.includes(id);
-    if (tour >= 2 && isYellow) return "gold";
-
+    if (t1P.includes(id) && t1A.includes(id)) return "green";
+    if (tour >= 2 && t2P.includes(id) && t2A.includes(id)) return "gold";
     return "grey";
   };
 
   const getBorderClass = (id) => {
-    const color = getBorderColor(id);
-    if (color === "blue") return "border-blue";
-    if (color === "green") return "border-green";
-    if (color === "gold") return "border-yellow";
+    const c = getBorderColor(id);
+    if (c === "blue") return "border-blue";
+    if (c === "green") return "border-green";
+    if (c === "gold") return "border-yellow";
     return "border-grey";
   };
 
@@ -218,7 +202,7 @@ export default function Player({ user }) {
     <div style={{ padding: 20, maxWidth: 1200, margin: "0 auto" }}>
       <style>{votePulseKeyframes}</style>
 
-      {/* ⭐⭐ BANNIÈRE VERTE FIXE ⭐⭐ */}
+      {/* ⭐ BANNIÈRE VERTE FIXE ⭐ */}
       {votesOpen && showVoteBanner && (
         <div
           style={{
@@ -264,7 +248,7 @@ export default function Player({ user }) {
       <h1>Bienvenue {user.pseudo}</h1>
       <p style={{ textAlign: "center" }}>{subtitle}</p>
 
-      {/* BANNIÈRE "Votes fermés" */}
+      {/* BANNIÈRE VOTES FERMÉS */}
       {!votesOpen && (
         <div
           style={{
@@ -343,7 +327,7 @@ export default function Player({ user }) {
         </div>
       )}
 
-      {/* TOUR 3 : classement */}
+      {/* TOUR 3 */}
       {tour === 3 && (
         <div className="grid">
           {candidates.map((miss) => (
@@ -407,7 +391,7 @@ export default function Player({ user }) {
         </div>
       )}
 
-      {/* BOUTON VALIDATION */}
+      {/* VALIDATION */}
       <div style={{ textAlign: "center", marginTop: 20 }}>
         <button
           onClick={handleValidate}
@@ -418,6 +402,10 @@ export default function Player({ user }) {
       </div>
 
       <Leaderboard />
+
+      {/* ⭐⭐ BULLE DE CHAT ⭐⭐ */}
+      <ChatBubble user={user} />
+
     </div>
   );
 }
