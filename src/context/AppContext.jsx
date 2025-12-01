@@ -1,6 +1,8 @@
+// src/context/AppContext.jsx
+
 import React, { createContext, useEffect, useState } from "react";
 import { database } from "../firebase";
-import { ref, onValue, set, update } from "firebase/database";
+import { ref, onValue, set, update, remove } from "firebase/database";
 
 export const AppContext = createContext();
 
@@ -17,7 +19,9 @@ export function AppProvider({ children }) {
 
   const roomRef = ref(database, "rooms/miss2026");
 
+  // ------------------------------
   // INIT ROOM
+  // ------------------------------
   useEffect(() => {
     onValue(
       roomRef,
@@ -36,15 +40,17 @@ export function AppProvider({ children }) {
     );
   }, []);
 
+  // ------------------------------
   // SYNC PLAYERS
+  // ------------------------------
   useEffect(() => {
     const playersRef = ref(database, "rooms/miss2026/players");
-    return onValue(playersRef, (snap) =>
-      setPlayers(snap.val() || {})
-    );
+    return onValue(playersRef, (snap) => setPlayers(snap.val() || {}));
   }, []);
 
+  // ------------------------------
   // SYNC ADMIN SELECTIONS
+  // ------------------------------
   useEffect(() => {
     const adminRef = ref(database, "rooms/miss2026/adminSelections");
     return onValue(adminRef, (snap) =>
@@ -54,7 +60,9 @@ export function AppProvider({ children }) {
     );
   }, []);
 
-  // SYNC VOTES OPEN & TOUR
+  // ------------------------------
+  // SYNC VOTES OPEN / TOUR / FINALE
+  // ------------------------------
   useEffect(() => {
     const vRef = ref(database, "rooms/miss2026/votesOpen");
     const tRef = ref(database, "rooms/miss2026/tour");
@@ -63,9 +71,7 @@ export function AppProvider({ children }) {
     const unsubV = onValue(vRef, (snap) =>
       setVotesOpenState(Boolean(snap.val()))
     );
-    const unsubT = onValue(tRef, (snap) =>
-      setTourState(snap.val() ?? 1)
-    );
+    const unsubT = onValue(tRef, (snap) => setTourState(snap.val() ?? 1));
     const unsubF = onValue(fRef, (snap) =>
       setFinaleStartedState(Boolean(snap.val()))
     );
@@ -77,27 +83,25 @@ export function AppProvider({ children }) {
     };
   }, []);
 
-  // ⭐⭐ RESET DES VOTES D’UN JOUEUR ⭐⭐
-  const resetPlayerVotes = (pseudo) => {
+  // ------------------------------
+  // FUNCTIONS
+  // ------------------------------
+
+  const addPlayer = (pseudo) => {
     update(ref(database, `rooms/miss2026/players/${pseudo}`), {
-      tour1: [],
-      tour2: [],
-      tour3: [],
       connected: true,
       lastSeen: Date.now(),
     });
   };
 
-  // ⭐ addPlayer modifié pour RESET AUTO à chaque connexion ⭐
-  const addPlayer = (pseudo) => {
-    resetPlayerVotes(pseudo); // <-- le joueur repart TOUJOURS à zéro
+  const resetPlayerVotes = (pseudo) => {
+    remove(ref(database, `rooms/miss2026/players/${pseudo}/tour1`));
+    remove(ref(database, `rooms/miss2026/players/${pseudo}/tour2`));
+    remove(ref(database, `rooms/miss2026/players/${pseudo}/tour3`));
   };
 
   const updatePlayerVote = (pseudo, tourNum, selection) => {
-    set(
-      ref(database, `rooms/miss2026/players/${pseudo}/tour${tourNum}`),
-      selection
-    );
+    set(ref(database, `rooms/miss2026/players/${pseudo}/tour${tourNum}`), selection);
   };
 
   const updateAdminSelections = (num, list) =>
@@ -126,6 +130,9 @@ export function AppProvider({ children }) {
     });
   };
 
+  // ------------------------------
+  // PROVIDER
+  // ------------------------------
   return (
     <AppContext.Provider
       value={{
@@ -135,7 +142,7 @@ export function AppProvider({ children }) {
         tour,
         finaleStarted,
         addPlayer,
-        resetPlayerVotes,  // <-- dispo si besoin autre part
+        resetPlayerVotes,
         updatePlayerVote,
         updateAdminSelections,
         updateTour,
