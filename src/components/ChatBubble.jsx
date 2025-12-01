@@ -62,7 +62,7 @@ export default function ChatBubble({ user }) {
           alignItems: "center",
           justifyContent: "center",
           cursor: "pointer",
-          zIndex: 9999,
+          zIndex: 999999999, // <--- AUGMENTÉ POUR PASSER AU-DESSUS DE L'OVERLAY ADMIN
           boxShadow: "0 4px 14px rgba(0,0,0,0.4)",
           animation: unread > 0 ? "pulseBubble 1.5s infinite" : "none",
         }}
@@ -103,7 +103,7 @@ export default function ChatBubble({ user }) {
             background: "rgba(10,10,20,0.95)",
             borderRadius: 12,
             boxShadow: "0 4px 14px rgba(0,0,0,0.4)",
-            zIndex: 99999,
+            zIndex: 999999999, // <--- AUGMENTÉ AUSSI
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
