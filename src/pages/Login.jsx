@@ -12,6 +12,7 @@ export default function Login({ setUser }) {
 
   const cleanLocalData = (pseudo) => {
     localStorage.removeItem("miss_user");
+
     localStorage.removeItem(`miss2026_selection_tour1_${pseudo}`);
     localStorage.removeItem(`miss2026_selection_tour2_${pseudo}`);
     localStorage.removeItem(`miss2026_ranking_tour3_${pseudo}`);
@@ -33,6 +34,7 @@ export default function Login({ setUser }) {
     if (password === "ludo") {
       resetPlayerVotes(p);
       cleanLocalData(p);
+
       addPlayer(p);
       setUser({ pseudo: p, role: "player" });
       navigate("/player");
@@ -68,7 +70,7 @@ export default function Login({ setUser }) {
         Qui aura le meilleur pronostic ?
       </p>
 
-      {/* ⭐ NOUVEAU TEXTE ⭐ */}
+      {/* ⭐ NOUVEAU TEXTE DES RÈGLES ⭐ */}
       <p
         style={{
           fontSize: 16,
@@ -83,10 +85,8 @@ export default function Login({ setUser }) {
         }}
       >
         ⚠️ <b style={{ color: "#d20055" }}>Important :</b><br />
-        Bien attendre que <b>les votes soient ouverts</b> pour sélectionner vos miss.
-        <br />
-        La fermeture des votes à chaque tour sera
-        <b> synchronisée avec la télévision</b> 📺✨
+        Bien attendre que <b>les votes soient ouverts</b> pour sélectionner vos miss.<br />
+        La fermeture des votes à chaque tour sera effectuée <b>en même temps qu'à la télé</b> 📺✨
         <br /><br />
 
         🟣 <b>Premier tour :</b> sélectionner <b>15 miss</b><br />
