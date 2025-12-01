@@ -62,7 +62,7 @@ export default function ChatBubble({ user }) {
           alignItems: "center",
           justifyContent: "center",
           cursor: "pointer",
-          zIndex: 2147483647, // plus grand z-index possible en CSS
+          zIndex: 2147483647, // Toujours au-dessus
           boxShadow: "0 4px 14px rgba(0,0,0,0.4)",
           animation: unread > 0 ? "pulseBubble 1.5s infinite" : "none",
         }}
@@ -103,7 +103,7 @@ export default function ChatBubble({ user }) {
             background: "rgba(10,10,20,0.95)",
             borderRadius: 12,
             boxShadow: "0 4px 14px rgba(0,0,0,0.4)",
-            zIndex: 999999999, // <--- AUGMENTÉ AUSSI
+            zIndex: 2147483647,
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
@@ -134,28 +134,42 @@ export default function ChatBubble({ user }) {
               gap: 8,
             }}
           >
-            {messages.map((m, i) => (
-              <div
-                key={i}
-                style={{
-                  alignSelf:
-                    m.author === user.pseudo ? "flex-end" : "flex-start",
-                  background:
-                    m.author === user.pseudo
+            {messages.map((m, i) => {
+              const isMe = m.author === user.pseudo;
+              const isAdmin = m.author.toLowerCase() === "admin";
+
+              return (
+                <div
+                  key={i}
+                  style={{
+                    alignSelf: isMe ? "flex-end" : "flex-start",
+
+                    background: isMe
                       ? "#ff4da6"
+                      : isAdmin
+                      ? "rgba(255, 215, 0, 0.22)" // Fond doré léger
                       : "rgba(255,255,255,0.15)",
-                  padding: "6px 10px",
-                  borderRadius: 10,
-                  maxWidth: "80%",
-                  color: "white",
-                  fontSize: 14,
-                }}
-              >
-                <b>{m.author}</b>
-                <br />
-                {m.text}
-              </div>
-            ))}
+
+                    padding: "6px 10px",
+                    borderRadius: 10,
+                    maxWidth: "80%",
+
+                    color: isAdmin ? "#ffd700" : "white", // Texte doré
+                    fontWeight: isAdmin ? "bold" : "normal",
+                    border: isAdmin ? "1px solid #ffd700" : "none",
+                    boxShadow: isAdmin
+                      ? "0 0 10px rgba(255,215,0,0.4)"
+                      : "none",
+                  }}
+                >
+                  <b>
+                    {isAdmin ? "👑 ADMIN" : m.author}
+                  </b>
+                  <br />
+                  {m.text}
+                </div>
+              );
+            })}
             <div ref={messagesEndRef}></div>
           </div>
 
