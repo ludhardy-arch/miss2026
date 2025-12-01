@@ -27,6 +27,9 @@ export default function Admin({ user }) {
     players,
     finaleStarted,
     updateFinaleStarted,
+
+    // ⭐ NOUVEAU POUR FLASH GLOBAL ⭐
+    triggerFlashVotes,
   } = useContext(AppContext);
 
   const [selection, setSelection] = useState([]);   // tours 1 & 2
@@ -34,6 +37,197 @@ export default function Admin({ user }) {
 
   // Charger sélection / classement existant
   useEffect(() => {
+    const current = adminSelections[`tour${tour}`];
+
+    if (tour === 3 && Array.isArray(current) && current.length === 5) {
+      const obj = {};
+      current.forEach((missId, index) => (obj[missId] = index + 1));
+      setRanking(obj);
+    } else {
+      setSelection(current || []);
+    }
+  }, [tour, adminSelections]);
+
+  // IDs des candidates selon le tour
+  const candidateIds =
+    tour === 1
+      ? CANDIDATES.map((m) => m.id)
+      : tour === 2
+      ? adminSelections.tour1 || []
+      : adminSelections.tour2 || [];
+
+  // Objets candidates
+  const candidates = candidateIds
+    .map((id) => CANDIDATES.find((m) => m.id === id))
+    .filter(Boolean);
+
+  const maxSelect = tour === 1 ? 15 : 5;
+
+  const handleClickMiss = (id) => {
+    if (tour === 3) return;
+
+    if (selection.includes(id)) {
+      setSelection(selection.filter((x) => x !== id));
+    } else if (selection.length < maxSelect) {
+      setSelection([...selection, id]);
+    }
+  };
+
+  const getRankLabel = (rank) => {
+    if (rank === 1) return "Miss France";
+    if (rank === 2) return "1ère dauphine";
+    if (rank === 3) return "2ème dauphine";
+    if (rank === 4) return "3ème dauphine";
+    return "4ème dauphine";
+  };
+
+  // Validation tour 1 / 2 / 3
+  const handleValidate = () => {
+    // TOURS 1 & 2
+    if (tour < 3) {
+      if (selection.length !== maxSelect) {
+        alert(`Vous devez sélectionner ${maxSelect} miss.`);
+        return;
+      }
+
+      if (
+        !window.confirm(
+          `Confirmer la sélection du tour ${tour} ? Cette action est définitive.`
+        )
+      ) {
+        return;
+      }
+
+      updateAdminSelections(tour, selection);
+      alert("Tour validé !");
+      updateTour(tour + 1);
+      return;
+    }
+
+    // TOUR 3 — classement final
+    const ranks = Object.values(ranking).filter(Boolean);
+    if (ranks.length !== 5) {
+      alert("Classez les 5 miss de la 1ère à la 5ème place.");
+      return;
+    }
+
+    const needed = [1, 2, 3, 4, 5];
+    const ok = needed.every((r) => ranks.includes(r));
+    if (!ok) {
+      alert("Chaque place doit être utilisée une seule fois.");
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "Confirmer le classement final ? Cette action est définitive."
+      )
+    ) {
+      return;
+    }
+
+    const ordered = [];
+    for (let r = 1; r <= 5; r++) {
+      const entry = Object.entries(ranking).find(([, rank]) => rank === r);
+      if (entry) ordered.push(Number(entry[0]));
+    }
+
+    updateAdminSelections(3, ordered);
+    alert("Finale validée !");
+  };
+
+  // Joueur a voté au tour courant ?
+  const playerHasVoted = (p) => {
+    if (!p) return false;
+    const t = p[`tour${tour}`];
+    if (!t) return false;
+    return Array.isArray(t) ? t.length > 0 : Object.keys(t).length > 0;
+  };
+
+  const getBorderClass = (id) =>
+    selection.includes(id) ? "border-blue" : "border-grey";
+
+  const usedRanks = Object.values(ranking).filter(Boolean);
+
+  return (
+    <div style={{ padding: 20, maxWidth: 1200, margin: "0 auto" }}>
+      {/* keyframes pour l'animation votes ouverts */}
+      <style>{votePulseKeyframes}</style>
+
+      {/* SHOW FINAL (overlay) */}
+      {finaleStarted && (
+        <FinaleOverlay
+          players={players}
+          adminSelections={adminSelections}
+          isAdmin={true}
+        />
+      )}
+
+      {/* HEADER ADMIN */}
+      <h1>ADMIN — {user.pseudo}</h1>
+
+      {/* BANNIÈRE VOTES OUVERTS */}
+      {votesOpen && (
+        <div
+          style={{
+            margin: "0 auto 15px",
+            maxWidth: 500,
+            padding: "10px 18px",
+            borderRadius: 999,
+            background:
+              "linear-gradient(135deg, rgba(0,200,120,0.95), rgba(0,255,180,0.95))",
+            color: "#012",
+            fontWeight: "bold",
+            textAlign: "center",
+            animation: "votePulse 1.6s infinite",
+          }}
+        >
+          ✅ VOTES OUVERTS !!!
+        </div>
+      )}
+
+      {/* BARRE DE CONTRÔLES */}
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          alignItems: "center",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          marginBottom: 20,
+        }}
+      >
+        {/* ⭐ BOUTON OUVERTURE/FERMETURE AVEC FLASH GLOBAL ⭐ */}
+        <button
+          onClick={() => {
+            const newState = !votesOpen;
+            updateVotesOpen(newState);
+
+            if (newState === true) {
+              // déclenche un flash global de 2.5 sec sur tous les écrans
+              triggerFlashVotes();
+            }
+          }}
+        >
+          {votesOpen ? "Fermer les votes" : "Ouvrir les votes"}
+        </button>
+
+        <button
+          onClick={resetGame}
+          style={{ background: "crimson", color: "white" }}
+        >
+          RESET
+        </button>
+
+        {tour === 3 && (
+          <button
+            onClick={() => updateFinaleStarted(true)}
+            style={{
+              background: "linear-gradient(135deg, #ffd700, #ff00aa)",
+              color: "white",
+            }}
+          >
+            🎉 Lancer le show
     const current = adminSelections[`tour${tour}`];
 
     if (tour === 3 && Array.isArray(current) && current.length === 5) {
