@@ -4,6 +4,7 @@ import React, { useContext, useEffect } from "react";
 import { AppContext } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import MalounetteAd from "../components/MalounetteAd";
+import ChatBubble from "../components/ChatBubble"; // ⭐ AJOUT ICI ⭐
 
 export default function Waiting() {
   const { tour, players } = useContext(AppContext);
@@ -39,6 +40,9 @@ export default function Waiting() {
 
       {/* Pub Malounette pendant l'attente */}
       <MalounetteAd />
+
+      {/* ⭐ CHAT BUBBLE TOUJOURS PRÉSENTE ⭐ */}
+      <ChatBubble user={user} />
     </div>
   );
 }
