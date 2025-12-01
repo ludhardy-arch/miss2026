@@ -27,9 +27,6 @@ export default function Admin({ user }) {
     players,
     finaleStarted,
     updateFinaleStarted,
-
-    // ⭐ NOUVEAU POUR FLASH GLOBAL ⭐
-    triggerFlashVotes,
   } = useContext(AppContext);
 
   const [selection, setSelection] = useState([]);   // tours 1 & 2
@@ -197,18 +194,7 @@ export default function Admin({ user }) {
           marginBottom: 20,
         }}
       >
-        {/* ⭐ BOUTON OUVERTURE/FERMETURE AVEC FLASH GLOBAL ⭐ */}
-        <button
-          onClick={() => {
-            const newState = !votesOpen;
-            updateVotesOpen(newState);
-
-            if (newState === true) {
-              // déclenche un flash global de 2.5 sec sur tous les écrans
-              triggerFlashVotes();
-            }
-          }}
-        >
+        <button onClick={() => updateVotesOpen(!votesOpen)}>
           {votesOpen ? "Fermer les votes" : "Ouvrir les votes"}
         </button>
 
@@ -280,7 +266,7 @@ export default function Admin({ user }) {
         </ul>
       </div>
 
-      {/* TOURS 1 & 2 */}
+      {/* TOURS 1 & 2 — SÉLECTION AVEC PHOTOS */}
       {tour !== 3 && (
         <>
           <h2>Tour {tour} — Sélection des miss</h2>
@@ -321,7 +307,7 @@ export default function Admin({ user }) {
         </>
       )}
 
-      {/* TOUR 3 — CLASSEMENT FINAL */}
+      {/* TOUR 3 — CLASSEMENT FINAL AVEC PHOTOS */}
       {tour === 3 && (
         <>
           <h2>Classement final (1 → 5)</h2>
