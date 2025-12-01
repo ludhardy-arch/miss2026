@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useState } from "react";
 import { database } from "../firebase";
-import { ref, onValue, set, update, remove } from "firebase/database";
+import { ref, onValue, set, update } from "firebase/database";
 
 export const AppContext = createContext();
 
@@ -15,14 +15,9 @@ export function AppProvider({ children }) {
   const [tour, setTourState] = useState(1);
   const [finaleStarted, setFinaleStartedState] = useState(false);
 
-  // ⭐ NOUVEAU : flash global "VOTES OUVERTS !!!"
-  const [flashVotes, setFlashVotes] = useState(0);
-
   const roomRef = ref(database, "rooms/miss2026");
 
-  // ------------------------------
   // INIT ROOM
-  // ------------------------------
   useEffect(() => {
     onValue(
       roomRef,
@@ -35,24 +30,21 @@ export function AppProvider({ children }) {
           votesOpen: false,
           tour: 1,
           finaleStarted: false,
-          flashVotes: 0, // ajout champ
         });
       },
       { onlyOnce: true }
     );
   }, []);
 
-  // ------------------------------
   // SYNC PLAYERS
-  // ------------------------------
   useEffect(() => {
     const playersRef = ref(database, "rooms/miss2026/players");
-    return onValue(playersRef, (snap) => setPlayers(snap.val() || {}));
+    return onValue(playersRef, (snap) =>
+      setPlayers(snap.val() || {})
+    );
   }, []);
 
-  // ------------------------------
   // SYNC ADMIN SELECTIONS
-  // ------------------------------
   useEffect(() => {
     const adminRef = ref(database, "rooms/miss2026/adminSelections");
     return onValue(adminRef, (snap) =>
@@ -62,49 +54,43 @@ export function AppProvider({ children }) {
     );
   }, []);
 
-  // ------------------------------
-  // SYNC VOTES OPEN / TOUR / FINALE
-  // ------------------------------
+  // SYNC VOTES OPEN & TOUR
   useEffect(() => {
     const vRef = ref(database, "rooms/miss2026/votesOpen");
     const tRef = ref(database, "rooms/miss2026/tour");
     const fRef = ref(database, "rooms/miss2026/finaleStarted");
-    const flRef = ref(database, "rooms/miss2026/flashVotes"); // ⭐ flash
 
     const unsubV = onValue(vRef, (snap) =>
       setVotesOpenState(Boolean(snap.val()))
     );
-    const unsubT = onValue(tRef, (snap) => setTourState(snap.val() ?? 1));
+    const unsubT = onValue(tRef, (snap) =>
+      setTourState(snap.val() ?? 1)
+    );
     const unsubF = onValue(fRef, (snap) =>
       setFinaleStartedState(Boolean(snap.val()))
-    );
-    const unsubFL = onValue(flRef, (snap) =>
-      setFlashVotes(snap.val() || 0)
     );
 
     return () => {
       unsubV();
       unsubT();
       unsubF();
-      unsubFL();
     };
   }, []);
 
-  // ------------------------------
-  // FUNCTIONS
-  // ------------------------------
-
-  const addPlayer = (pseudo) => {
+  // ⭐⭐ RESET DES VOTES D’UN JOUEUR ⭐⭐
+  const resetPlayerVotes = (pseudo) => {
     update(ref(database, `rooms/miss2026/players/${pseudo}`), {
+      tour1: [],
+      tour2: [],
+      tour3: [],
       connected: true,
       lastSeen: Date.now(),
     });
   };
 
-  const resetPlayerVotes = (pseudo) => {
-    remove(ref(database, `rooms/miss2026/players/${pseudo}/tour1`));
-    remove(ref(database, `rooms/miss2026/players/${pseudo}/tour2`));
-    remove(ref(database, `rooms/miss2026/players/${pseudo}/tour3`));
+  // ⭐ addPlayer modifié pour RESET AUTO à chaque connexion ⭐
+  const addPlayer = (pseudo) => {
+    resetPlayerVotes(pseudo); // <-- le joueur repart TOUJOURS à zéro
   };
 
   const updatePlayerVote = (pseudo, tourNum, selection) => {
@@ -128,12 +114,6 @@ export function AppProvider({ children }) {
   const updateFinaleStarted = (state) =>
     set(ref(database, "rooms/miss2026/finaleStarted"), state);
 
-  // ⭐ NOUVEAU : déclencher un flash global
-  const triggerFlashVotes = () => {
-    const now = Date.now();
-    set(ref(database, "rooms/miss2026/flashVotes"), now);
-  };
-
   const resetGame = () => {
     if (!window.confirm("Réinitialiser toute la partie ?")) return;
 
@@ -143,13 +123,9 @@ export function AppProvider({ children }) {
       votesOpen: false,
       tour: 1,
       finaleStarted: false,
-      flashVotes: 0,
     });
   };
 
-  // ------------------------------
-  // PROVIDER
-  // ------------------------------
   return (
     <AppContext.Provider
       value={{
@@ -158,15 +134,13 @@ export function AppProvider({ children }) {
         votesOpen,
         tour,
         finaleStarted,
-        flashVotes,          // ⭐ nouveau
         addPlayer,
-        resetPlayerVotes,
+        resetPlayerVotes,  // <-- dispo si besoin autre part
         updatePlayerVote,
         updateAdminSelections,
         updateTour,
         updateVotesOpen,
         updateFinaleStarted,
-        triggerFlashVotes,   // ⭐ nouveau
         resetGame,
       }}
     >
