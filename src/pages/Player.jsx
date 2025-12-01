@@ -272,25 +272,26 @@ export default function Player({ user }) {
       )}
 
       {/* LÉGENDE */}
-      <div
-        style={{
-          margin: "20px auto",
-          padding: 15,
-          borderRadius: 10,
-          background: "rgba(0,0,0,0.45)",
-          maxWidth: 600,
-          boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
-        }}
-      >
-        <h3 style={{ marginTop: 0 }}>Légende :</h3>
+<div
+  style={{
+    margin: "20px auto",
+    padding: 15,
+    borderRadius: 10,
+    background: "rgba(0,0,0,0.45)",
+    maxWidth: 600,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+  }}
+>
+  <h3 style={{ marginTop: 0 }}>Légende :</h3>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <LegendItem colorClass="border-blue" text="Sélection en cours" />
-          <LegendItem colorClass="border-green" text="Bonne au tour 1" />
-          <LegendItem colorClass="border-yellow" text="Bonne au tour 2" />
-          <LegendItem colorClass="border-grey" text="Jamais sélectionnée" />
-        </div>
-      </div>
+  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    <LegendItem colorClass="border-blue" text="Sélection en cours" />
+    <LegendItem colorClass="border-green" text="Bien sélectionnée au tour 1 puis 2" />
+    <LegendItem colorClass="border-yellow" text="Bien sélectionnée uniquement au tour 2" />
+    <LegendItem colorClass="border-grey" text="Jamais sélectionnée" />
+  </div>
+</div>
+
 
       {/* TOURS 1 & 2 */}
       {tour !== 3 && (
