@@ -62,7 +62,7 @@ export default function ChatBubble({ user }) {
           alignItems: "center",
           justifyContent: "center",
           cursor: "pointer",
-          zIndex: 999999999, // <--- AUGMENTÉ POUR PASSER AU-DESSUS DE L'OVERLAY ADMIN
+          zIndex: 2147483647, // plus grand z-index possible en CSS
           boxShadow: "0 4px 14px rgba(0,0,0,0.4)",
           animation: unread > 0 ? "pulseBubble 1.5s infinite" : "none",
         }}
