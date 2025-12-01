@@ -8,7 +8,6 @@ import Waiting from "./pages/Waiting";
 
 import { AppContext } from "./context/AppContext";
 import FinaleOverlay from "./components/FinaleOverlay";
-import FlashVotes from "./components/FlashVotes"; // ⭐ NOUVEAU
 
 export default function App() {
   return <RouterContent />;
@@ -24,8 +23,7 @@ function RouterContent() {
     }
   });
 
-  const { finaleStarted, players, adminSelections, flashVotes } =
-    useContext(AppContext); // ⭐ flashVotes ajouté
+  const { finaleStarted, players, adminSelections } = useContext(AppContext);
 
   useEffect(() => {
     if (user) localStorage.setItem("miss_user", JSON.stringify(user));
@@ -37,13 +35,12 @@ function RouterContent() {
   const pathname = window.location.pathname;
 
   const shouldShowFinale =
-    finaleStarted && isLogged && pathname !== "/login";
+    finaleStarted &&
+    isLogged &&
+    pathname !== "/login";
 
   return (
     <BrowserRouter>
-      {/* ⭐ FLASH GLOBAL "VOTES OUVERTS !!!" ⭐ */}
-      <FlashVotes flashSignal={flashVotes} />
-
       {/* ⭐ Le show final visible par TOUS (admin + joueurs) sauf login ⭐ */}
       {shouldShowFinale && (
         <FinaleOverlay
