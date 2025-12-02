@@ -1,4 +1,5 @@
-// src/components/FinalShow.jsx
+// src/components/FinalShow.jsx  →  VERSION FINALE 100% VALIDÉE PAR TOI
+
 import React, { useState, useEffect, useContext } from "react";
 import confetti from "canvas-confetti";
 import { calculatePoints } from "../services/points";
@@ -8,10 +9,13 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
   const { updateFinaleStarted } = useContext(AppContext) || {};
 
   const [phase, setPhase] = useState("intro");
-  const [introStep, setIntroStep] = useState(0); // 0: Miss France, 1: Mais pour nous, 2: countdown
+  const [introStep, setIntroStep] = useState(0);
   const [countdown, setCountdown] = useState(5);
-  const [step, setStep] = useState(0); // pour les révélations progressives
-  const [showNameDelay, setShowNameDelay] = useState(false); // pour décalage nom
+  const [step, setStep] = useState(0);
+  const [showNameDelay, setShowNameDelay] = useState(false);
+
+  // NOUVEAU : étapes précises du couronnement final
+  const [crowningStep, setCrowningStep] = useState(0); // 0 = rien, 1 = "MISS PRONO 2026", 2 = "est ET restera…", 3 = prénom + confettis
 
   const ranking = React.useMemo(() => {
     return Object.entries(players || {})
@@ -27,42 +31,59 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
   const top5 = ranking.slice(0, 5);
   const currentPlayer = step < ranking.length ? ranking[ranking.length - 1 - step] : null;
 
-  // INTRO SUB-PHASES
+  // INTRO
   useEffect(() => {
     if (phase !== "intro") return;
 
     if (introStep === 0) {
-      const t = setTimeout(() => setIntroStep(1), 4000); // +4s pour "Miss France est élue..."
+      const t = setTimeout(() => setIntroStep(1), 4000);
       return () => clearTimeout(t);
     }
-
     if (introStep === 1) {
-      const t = setTimeout(() => setIntroStep(2), 4000); // +4s pour "Mais pour nous..."
+      const t = setTimeout(() => setIntroStep(2), 4000);
       return () => clearTimeout(t);
     }
-
     if (introStep === 2 && countdown > 0) {
       const t = setTimeout(() => setCountdown(c => c - 1), 1000);
       return () => clearTimeout(t);
     }
-
     if (introStep === 2 && countdown === 0) {
-      setTimeout(() => setPhase("reveal"), 2000); // Petite pause après "GO !"
+      setTimeout(() => setPhase("reveal"), 2000);
     }
   }, [phase, introStep, countdown]);
 
-  // RÉVÉLATIONS AVEC DÉCALAGE
+  // RÉVÉLATIONS
   useEffect(() => {
     if (phase !== "reveal") return;
-    if (step >= ranking.length + 5) return;
+    if (step >= ranking.length + 10) return;
 
-    setShowNameDelay(false); // Reset pour chaque step
+    setShowNameDelay(false);
 
-    const delayTimer = setTimeout(() => setShowNameDelay(true), 2500); // 2.5s pour montrer le nom
+    // Quand on arrive au gagnant → on déclenche le couronnement spécial
+    if (step === ranking.length - 1) {
+      setCrowningStep(1);
+      const t1 = setTimeout(() => setCrowningStep(2), 2000);
+      const t2 = setTimeout(() => {
+        setCrowningStep(3);
+        // Confettis au moment du prénom
+        confetti({
+          particleCount: 300,
+          spread: 100,
+          origin: { y: 0.55 },
+          colors: ['#ffd700', '#ff6b6b', '#4ecdc4', '#ffeaa7', '#fab1a0']
+        });
+      }, 4000);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+
+    const delayTimer = setTimeout(() => setShowNameDelay(true), 2500);
 
     const nextTimer = setTimeout(() => {
       setStep(s => s + 1);
-    }, step < ranking.length - 5 ? 5000 : step < ranking.length - 1 ? 8000 : 5000); // Plus long pour dauphines
+    }, step < ranking.length - 5 ? 5000 : step < ranking.length - 1 ? 8000 : 6000);
 
     return () => {
       clearTimeout(delayTimer);
@@ -70,104 +91,53 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
     };
   }, [phase, step, ranking.length]);
 
-  // CONFETTIS
-  useEffect(() => {
-    if (step === ranking.length + 2 && winner) {
-      confetti({
-        particleCount: 200,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24']
-      });
-    }
-  }, [step, winner, ranking.length]);
-
   const quit = () => {
     if (confirm("Quitter le show ?")) updateFinaleStarted?.(false);
   };
 
   return (
     <>
-      {/* FOND */}
+      {/* FOND + LUMIÈRES */}
+      <div style={{ position: "fixed", inset: 0, background: "linear-gradient(135deg, #0f0f3d 0%, #000428 50%, #000814 100%)", zIndex: 9998 }} />
       <div style={{
-        position: "fixed",
-        inset: 0,
-        background: "linear-gradient(135deg, #0f0f3d 0%, #000428 50%, #000814 100%)",
-        zIndex: 9998,
-      }} />
-
-      {/* LUMIÈRES */}
-      <div style={{
-        position: "fixed",
-        inset: 0,
-        background: `
-          radial-gradient(circle at 20% 20%, rgba(100,150,255,0.4), transparent 50%),
-          radial-gradient(circle at 80% 80%, rgba(255,215,0,0.4), transparent 50%)
-        `,
-        pointerEvents: "none",
-        zIndex: 9999,
+        position: "fixed", inset: 0,
+        background: `radial-gradient(circle at 20% 20%, rgba(100,150,255,0.4), transparent 50%), radial-gradient(circle at 80% 80%, rgba(255,215,0,0.4), transparent 50%)`,
+        pointerEvents: "none", zIndex: 9999,
       }} />
 
       <div style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 10000,
-        display: "flex",
-        flexDirection: "column",
-        fontFamily: "'Bebas Neue', Arial, sans-serif",
-        color: "white",
-        textAlign: "center",
-        overflow: "hidden",
+        position: "fixed", inset: 0, zIndex: 10000,
+        display: "flex", flexDirection: "column",
+        fontFamily: "'Bebas Neue', Arial, sans-serif", color: "white", textAlign: "center",
       }}>
 
         {/* HEADER */}
         <div style={{
-          padding: "15px 20px",
-          background: "rgba(0,0,0,0.7)",
-          fontSize: "1.8rem",
-          letterSpacing: "4px",
-          textShadow: "0 0 20px #ffd700",
-          position: "relative",
+          padding: "15px 20px", background: "rgba(0,0,0,0.7)", fontSize: "1.8rem", letterSpacing: "4px",
+          textShadow: "0 0 20px #ffd700", position: "relative",
         }}>
           MISS PRONO 2026
           {isAdmin && (
             <button onClick={quit} style={{
-              position: "absolute",
-              right: 15,
-              top: 15,
-              padding: "8px 16px",
-              background: "#c00",
-              border: "none",
-              borderRadius: 20,
-              fontSize: "0.9rem",
-              cursor: "pointer",
+              position: "absolute", right: 15, top: 15, padding: "8px 16px", background: "#c00",
+              border: "none", borderRadius: 20, fontSize: "0.9rem", cursor: "pointer",
             }}>
               Quitter
             </button>
           )}
         </div>
 
-        {/* CONTENU CENTRAL */}
+        {/* CONTENU */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "20px" }}>
 
           {/* INTRO */}
           {phase === "intro" && (
             <div>
-              {introStep >= 0 && (
-                <div style={{ fontSize: "3.2rem", marginBottom: "2rem", lineHeight: 1.2 }}>
-                  Miss France<br />est élue…
-                </div>
-              )}
-              {introStep >= 1 && (
-                <div style={{ fontSize: "2.8rem", margin: "2rem 0", color: "#ffd700" }}>
-                  Mais pour nous<br />QUI A GAGNÉ ?
-                </div>
-              )}
+              {introStep >= 0 && <div style={{ fontSize: "3.2rem", marginBottom: "2rem", lineHeight: 1.2 }}>Miss France<br />est élue…</div>}
+              {introStep >= 1 && <div style={{ fontSize: "2.8rem", margin: "2rem 0", color: "#ffd700" }}>Mais pour nous<br />QUI A GAGNÉ ?</div>}
               {introStep >= 2 && (
                 <div style={{
-                  fontSize: countdown > 0 ? "12rem" : "5rem",
-                  fontWeight: 900,
-                  marginTop: "3rem",
+                  fontSize: countdown > 0 ? "12rem" : "5rem", fontWeight: 900, marginTop: "3rem",
                   textShadow: "0 0 40px #ffd700",
                 }}>
                   {countdown > 0 ? countdown : "GO !"}
@@ -176,17 +146,13 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
             </div>
           )}
 
-          {/* RÉVÉLATIONS BOTTOM */}
+          {/* BOTTOM PLACES */}
           {phase === "reveal" && currentPlayer && step < ranking.length - 5 && (
             <div style={{ animation: "zoomIn 1.5s ease-out" }}>
               <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>
                 À la {currentPlayer.rank}ème place :
               </div>
-              {showNameDelay && (
-                <div style={{ fontSize: "5.5rem", fontWeight: 900 }}>
-                  {currentPlayer.pseudo}
-                </div>
-              )}
+              {showNameDelay && <div style={{ fontSize: "5.5rem", fontWeight: 900 }}>{currentPlayer.pseudo}</div>}
             </div>
           )}
 
@@ -204,34 +170,38 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
             </div>
           )}
 
-          {/* GAGNANT */}
+          {/* COURONNEMENT FINAL – LA MAGIE */}
           {phase === "reveal" && step >= ranking.length - 1 && winner && (
-            <div>
-              <div style={{ fontSize: "4rem", marginBottom: "2rem", color: "#ffd700" }}>
-                MISS PRONO 2026
-              </div>
-              <div style={{
-                fontSize: "7rem",
-                fontWeight: 900,
-                textShadow: "0 0 80px #ffd700, 0 0 120px #ff4500",
-                margin: "2rem 0",
-              }}>
-                {winner.pseudo}
-              </div>
+            <div style={{ minHeight: "60vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              {crowningStep >= 1 && (
+                <div style={{ fontSize: "5rem", color: "#ffd700", marginBottom: "2rem", animation: "zoomIn 1.5s" }}>
+                  MISS PRONO 2026
+                </div>
+              )}
+              {crowningStep >= 2 && (
+                <div style={{ fontSize: "4rem", margin: "2rem 0", animation: "zoomIn 1.5s 0.5s both" }}>
+                  est ET restera…
+                </div>
+              )}
+              {crowningStep >= 3 && (
+                <div style={{
+                  fontSize: "8rem", fontWeight: 900,
+                  textShadow: "0 0 100px #ffd700, 0 0 160px #ff4500",
+                  animation: "zoomIn 2s 1s both",
+                }}>
+                  {winner.pseudo}
+                </div>
+              )}
             </div>
           )}
 
         </div>
 
         {/* CLASSEMENT FINAL SCROLLABLE */}
-        {phase === "reveal" && step >= ranking.length && (
+        {phase === "reveal" && step >= ranking.length && crowningStep === 3 && (
           <div style={{
-            background: "rgba(0,0,0,0.8)",
-            padding: "20px",
-            borderRadius: "20px 20px 0 0",
-            fontSize: "1.5rem",
-            overflowY: "auto",
-            maxHeight: "50vh",
+            background: "rgba(0,0,0,0.8)", padding: "20px", borderRadius: "20px 20px 0 0",
+            fontSize: "1.5rem", overflowY: "auto", maxHeight: "50vh",
           }}>
             <h3 style={{ fontSize: "2rem", marginBottom: "1rem" }}>Classement Final</h3>
             {ranking.map((p, i) => (
