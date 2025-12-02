@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+ import React, { useState, useEffect, useRef } from "react";
 import { database } from "../firebase";
 import { ref, push, onValue } from "firebase/database";
 
@@ -10,43 +10,44 @@ export default function ChatBubble({ user }) {
 
   const messagesEndRef = useRef(null);
 
-  // Pour gérer les "vrais" nouveaux messages
-  const lastMessageCountRef = useRef(0);
-  const firstLoadRef = useRef(true);
+  // Stocke l’ancien dernier message pour détecter les vrais nouveaux
+  const lastMessageRef = useRef(null);
 
   // Charger messages Firebase
   useEffect(() => {
     const chatRef = ref(database, "rooms/miss2026/chat");
-
-    // à chaque (re)subscription, on considère la première lecture comme "initiale"
-    firstLoadRef.current = true;
 
     const unsubscribe = onValue(chatRef, (snap) => {
       const data = snap.val() || {};
       const list = Object.values(data).sort((a, b) => a.date - b.date);
       setMessages(list);
 
-      const currentCount = list.length;
+      const last = list[list.length - 1] || null;
 
-      // Première fois qu'on reçoit les messages → on ne considère pas ça comme "nouveau"
-      if (firstLoadRef.current) {
-        firstLoadRef.current = false;
-        lastMessageCountRef.current = currentCount;
+      // Première lecture = aucun badge
+      if (lastMessageRef.current === null) {
+        lastMessageRef.current = last;
         return;
       }
 
-      // Si la fenêtre est fermée et qu'il y a PLUS de messages qu'avant → nouveaux messages
-      if (!open && currentCount > lastMessageCountRef.current) {
-        const diff = currentCount - lastMessageCountRef.current;
-        setUnread((u) => u + diff);
+      // Aucun nouveau message ?
+      if (
+        !last ||
+        (lastMessageRef.current && last.date === lastMessageRef.current.date)
+      ) {
+        return;
       }
 
-      // On met à jour le compteur
-      lastMessageCountRef.current = currentCount;
+      // Si c'est un nouveau message ET que la bulle est fermée ET que ce n'est pas l'utilisateur
+      if (!open && last.author !== user.pseudo) {
+        setUnread((u) => u + 1);
+      }
+
+      lastMessageRef.current = last;
     });
 
     return () => unsubscribe();
-  }, [open]);
+  }, [open, user.pseudo]);
 
   // Scroll auto
   useEffect(() => {
@@ -91,7 +92,7 @@ export default function ChatBubble({ user }) {
         }}
         onClick={() => {
           setOpen(!open);
-          setUnread(0); // On remet à zéro dès qu'on ouvre
+          setUnread(0); // reset badge
         }}
       >
         💬
@@ -177,7 +178,7 @@ export default function ChatBubble({ user }) {
                     borderRadius: 10,
                     maxWidth: "80%",
 
-                    color: isAdmin ? "#ffd700" : "white", // Texte doré pour admin
+                    color: isAdmin ? "#ffd700" : "white", // Texte doré
                     fontWeight: isAdmin ? "bold" : "normal",
                     border: isAdmin ? "1px solid #ffd700" : "none",
                     boxShadow: isAdmin
