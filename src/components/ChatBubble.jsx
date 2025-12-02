@@ -10,19 +10,42 @@ export default function ChatBubble({ user }) {
 
   const messagesEndRef = useRef(null);
 
+  // Pour gérer les "vrais" nouveaux messages
+  const lastMessageCountRef = useRef(0);
+  const firstLoadRef = useRef(true);
+
   // Charger messages Firebase
   useEffect(() => {
     const chatRef = ref(database, "rooms/miss2026/chat");
 
-    return onValue(chatRef, (snap) => {
+    // à chaque (re)subscription, on considère la première lecture comme "initiale"
+    firstLoadRef.current = true;
+
+    const unsubscribe = onValue(chatRef, (snap) => {
       const data = snap.val() || {};
       const list = Object.values(data).sort((a, b) => a.date - b.date);
       setMessages(list);
 
-      if (!open) {
-        setUnread((u) => u + 1);
+      const currentCount = list.length;
+
+      // Première fois qu'on reçoit les messages → on ne considère pas ça comme "nouveau"
+      if (firstLoadRef.current) {
+        firstLoadRef.current = false;
+        lastMessageCountRef.current = currentCount;
+        return;
       }
+
+      // Si la fenêtre est fermée et qu'il y a PLUS de messages qu'avant → nouveaux messages
+      if (!open && currentCount > lastMessageCountRef.current) {
+        const diff = currentCount - lastMessageCountRef.current;
+        setUnread((u) => u + diff);
+      }
+
+      // On met à jour le compteur
+      lastMessageCountRef.current = currentCount;
     });
+
+    return () => unsubscribe();
   }, [open]);
 
   // Scroll auto
@@ -68,7 +91,7 @@ export default function ChatBubble({ user }) {
         }}
         onClick={() => {
           setOpen(!open);
-          setUnread(0);
+          setUnread(0); // On remet à zéro dès qu'on ouvre
         }}
       >
         💬
@@ -154,7 +177,7 @@ export default function ChatBubble({ user }) {
                     borderRadius: 10,
                     maxWidth: "80%",
 
-                    color: isAdmin ? "#ffd700" : "white", // Texte doré
+                    color: isAdmin ? "#ffd700" : "white", // Texte doré pour admin
                     fontWeight: isAdmin ? "bold" : "normal",
                     border: isAdmin ? "1px solid #ffd700" : "none",
                     boxShadow: isAdmin
@@ -162,9 +185,7 @@ export default function ChatBubble({ user }) {
                       : "none",
                   }}
                 >
-                  <b>
-                    {isAdmin ? "👑 ADMIN" : m.author}
-                  </b>
+                  <b>{isAdmin ? "👑 ADMIN" : m.author}</b>
                   <br />
                   {m.text}
                 </div>
