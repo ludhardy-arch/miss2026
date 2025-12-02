@@ -10,9 +10,9 @@ const styles = {
     position: "fixed",
     inset: 0,
     zIndex: 9998,
-    // Fond plateau TV Miss France (image + dégradé)
+    // Fond plateau TV Miss France (image + dégradé bleu royal)
     backgroundImage:
-      'radial-gradient(circle at top, rgba(10,10,40,0.9), rgba(0,0,0,0.98)), url("/images/plateau-missfrance.jpg")',
+      'radial-gradient(circle at top, rgba(10,20,60,0.9), rgba(0,0,0,0.98)), url("/image/plateau-missfrance.jpg")',
     backgroundSize: "cover",
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
@@ -34,19 +34,19 @@ const styles = {
     marginBottom: 10,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     textTransform: "uppercase",
     letterSpacing: 3,
     textAlign: "center",
     flex: 1,
-    textShadow: "0 0 10px rgba(0,0,0,0.9)",
+    textShadow: "0 0 12px rgba(0,0,0,0.9)",
   },
   quitButton: {
     padding: "6px 14px",
     borderRadius: 999,
     border: "none",
     cursor: "pointer",
-    background: "rgba(0,0,0,0.7)",
+    background: "rgba(0,0,0,0.8)",
     color: "white",
     fontSize: 13,
   },
@@ -58,42 +58,49 @@ const styles = {
     alignItems: "stretch",
   },
   rankingPanel: {
-    background: "rgba(0,0,0,0.65)",
-    borderRadius: 16,
+    background: "rgba(0,0,0,0.7)",
+    borderRadius: 18,
     padding: 14,
-    boxShadow: "0 0 20px rgba(0,0,0,0.8)",
-    border: "1px solid rgba(255,255,255,0.12)",
+    boxShadow: "0 0 28px rgba(0,0,0,0.85)",
+    border: "1px solid rgba(255,255,255,0.15)",
     overflow: "hidden",
   },
   rankingTitle: {
     fontSize: 18,
-    marginBottom: 8,
+    marginBottom: 10,
     textAlign: "center",
   },
   rankingList: {
     maxHeight: "100%",
     overflowY: "auto",
-    paddingRight: 4,
+    paddingRight: 6,
   },
-  rankingRow: (highlight) => ({
+  rankingRow: (highlight, semi) => ({
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "4px 8px",
+    padding: "5px 8px",
     marginBottom: 4,
-    borderRadius: 8,
+    borderRadius: 10,
     background: highlight
-      ? "linear-gradient(90deg, rgba(255,215,0,0.3), rgba(0,0,0,0.8))"
-      : "rgba(0,0,0,0.45)",
+      ? "linear-gradient(90deg, rgba(255,215,0,0.35), rgba(0,0,0,0.9))"
+      : semi
+      ? "linear-gradient(90deg, rgba(135,206,250,0.25), rgba(0,0,0,0.8))"
+      : "rgba(0,0,0,0.55)",
     fontSize: 14,
-    transition: "transform 0.25s, box-shadow 0.25s, background 0.25s",
     transform: highlight ? "scale(1.02)" : "scale(1)",
     boxShadow: highlight
-      ? "0 0 14px rgba(255,215,0,0.6)"
-      : "0 0 6px rgba(0,0,0,0.7)",
+      ? "0 0 18px rgba(255,215,0,0.8)"
+      : "0 0 10px rgba(0,0,0,0.7)",
+    border: highlight
+      ? "1px solid rgba(255,215,0,0.9)"
+      : semi
+      ? "1px solid rgba(135,206,250,0.7)"
+      : "1px solid rgba(255,255,255,0.08)",
+    transition: "transform 0.2s, box-shadow 0.2s, background 0.2s",
   }),
   rankingPos: {
-    width: 30,
+    width: 40,
     fontWeight: "bold",
     opacity: 0.9,
   },
@@ -103,17 +110,18 @@ const styles = {
     paddingLeft: 6,
   },
   rankingPoints: {
-    width: 60,
+    width: 70,
     textAlign: "right",
     opacity: 0.85,
   },
   stage: {
     position: "relative",
-    background: "linear-gradient(160deg, rgba(10,10,30,0.95), rgba(5,5,15,0.98))",
-    borderRadius: 20,
-    boxShadow: "0 0 28px rgba(0,0,0,0.9)",
-    border: "1px solid rgba(255,255,255,0.15)",
-    padding: 20,
+    background:
+      "radial-gradient(circle at top, rgba(30,60,140,0.9), rgba(5,5,15,0.98))",
+    borderRadius: 24,
+    boxShadow: "0 0 40px rgba(0,0,0,0.95)",
+    border: "1px solid rgba(255,255,255,0.2)",
+    padding: 22,
     overflow: "hidden",
     display: "flex",
     flexDirection: "column",
@@ -124,19 +132,19 @@ const styles = {
     fontSize: 18,
     marginBottom: 10,
   },
+  centerLabel: {
+    textAlign: "center",
+    fontSize: 24,
+    marginTop: 10,
+    opacity: 0.9,
+  },
   centerName: {
     textAlign: "center",
-    marginTop: 10,
-    fontSize: 34,
+    marginTop: 8,
+    fontSize: 40,
     fontWeight: "bold",
     textShadow:
-      "0 0 12px rgba(0,0,0,1), 0 0 24px rgba(0,0,0,1), 0 0 30px rgba(255,215,0,0.9)",
-  },
-  centerSub: {
-    textAlign: "center",
-    fontSize: 16,
-    marginTop: 6,
-    opacity: 0.85,
+      "0 0 12px rgba(0,0,0,1), 0 0 24px rgba(0,0,0,1), 0 0 40px rgba(255,215,0,0.9)",
   },
   countdownBig: {
     textAlign: "center",
@@ -147,12 +155,12 @@ const styles = {
       "0 0 16px rgba(0,0,0,1), 0 0 40px rgba(255,215,0,0.9)",
   },
   top5Wrapper: {
-    marginTop: 16,
+    marginTop: 20,
   },
   top5Title: {
     textAlign: "center",
     fontSize: 20,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   top5Grid: {
     display: "grid",
@@ -161,17 +169,17 @@ const styles = {
   },
   top5Card: (isWinner) => ({
     position: "relative",
-    background: "rgba(0,0,0,0.7)",
-    borderRadius: 12,
+    background: "rgba(0,0,0,0.75)",
+    borderRadius: 14,
     padding: "10px 8px",
     textAlign: "center",
     border: isWinner
-      ? "2px solid rgba(255,215,0,0.9)"
+      ? "2px solid rgba(255,215,0,0.95)"
       : "1px solid rgba(255,255,255,0.15)",
     boxShadow: isWinner
-      ? "0 0 18px rgba(255,215,0,0.8)"
-      : "0 0 10px rgba(0,0,0,0.8)",
-    transform: isWinner ? "scale(1.04)" : "scale(1)",
+      ? "0 0 22px rgba(255,215,0,1)"
+      : "0 0 12px rgba(0,0,0,0.9)",
+    transform: isWinner ? "scale(1.06)" : "scale(1)",
     transition: "transform 0.25s, box-shadow 0.25s, border 0.25s",
   }),
   top5Pos: {
@@ -189,7 +197,7 @@ const styles = {
     left: "50%",
     transform: "translateX(-50%)",
     fontSize: 22,
-    textShadow: "0 0 10px rgba(255,215,0,0.9)",
+    textShadow: "0 0 12px rgba(255,215,0,1)",
   },
   winnerBadge: {
     marginTop: 30,
@@ -198,13 +206,13 @@ const styles = {
   winnerCircle: {
     position: "relative",
     margin: "0 auto",
-    width: 200,
-    height: 200,
+    width: 220,
+    height: 220,
     borderRadius: "50%",
     background:
       "radial-gradient(circle at center, #ffffff, #ffe8a3, #ffb347, #c27c2c)",
     boxShadow:
-      "0 0 30px rgba(255,215,0,0.9), 0 0 70px rgba(255,255,255,0.5)",
+      "0 0 35px rgba(255,215,0,0.9), 0 0 80px rgba(255,255,255,0.7)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -212,63 +220,63 @@ const styles = {
     animation: "winnerGlow 2.5s ease-in-out infinite",
   },
   winnerName: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "bold",
     color: "#3b1a00",
     textAlign: "center",
     padding: "0 10px",
-    textShadow: "0 0 5px rgba(255,255,255,0.8)",
+    textShadow: "0 0 6px rgba(255,255,255,0.9)",
   },
   winnerCrown: {
     position: "absolute",
-    top: -40,
+    top: -42,
     left: "50%",
     transform: "translateX(-50%)",
-    fontSize: 40,
-    filter: "drop-shadow(0 0 10px rgba(255,215,0,1))",
+    fontSize: 42,
+    filter: "drop-shadow(0 0 12px rgba(255,215,0,1))",
   },
   winnerRibbon: {
     position: "absolute",
-    bottom: -8,
+    bottom: -10,
     left: "50%",
-    transform: "translateX(-50%) rotate(-3deg)",
+    transform: "translateX(-50%) rotate(-4deg)",
     background:
       "linear-gradient(90deg, #001f54, #004aad, #d5006d, #ffcc00)",
     color: "white",
-    padding: "4px 18px",
+    padding: "5px 20px",
     borderRadius: 999,
     fontSize: 12,
     fontWeight: "bold",
     textTransform: "uppercase",
     letterSpacing: 1,
-    boxShadow: "0 0 10px rgba(0,0,0,0.8)",
+    boxShadow: "0 0 12px rgba(0,0,0,0.9)",
   },
 };
 
-const introKeyframes = `
+const keyframes = `
 @keyframes textFlyIn {
   0% { transform: translate3d(0, 80px, -400px) scale(0.6) rotateX(40deg); opacity: 0; }
   60% { transform: translate3d(0, 0, 0) scale(1.05) rotateX(0); opacity: 1; }
   100% { transform: translate3d(0, 0, 0) scale(1) rotateX(0); opacity: 1; }
 }
 @keyframes nameFromFar {
-  0% { transform: translate3d(0, 100px, -500px) scale(0.4) rotateX(45deg); opacity: 0; }
+  0% { transform: translate3d(0, 120px, -500px) scale(0.4) rotateX(45deg); opacity: 0; }
   60% { transform: translate3d(0, -4px, 0) scale(1.1) rotateX(0); opacity: 1; }
   100% { transform: translate3d(0, 0, 0) scale(1) rotateX(0); opacity: 1; }
 }
 @keyframes spotlights {
-  0% { opacity: 0.3; transform: rotate(-12deg); }
-  50% { opacity: 0.9; transform: rotate(8deg); }
-  100% { opacity: 0.3; transform: rotate(-12deg); }
+  0% { opacity: 0.25; transform: rotate(-15deg); }
+  50% { opacity: 0.9; transform: rotate(10deg); }
+  100% { opacity: 0.25; transform: rotate(-15deg); }
 }
 @keyframes winnerGlow {
-  0% { box-shadow: 0 0 15px rgba(255,215,0,0.5), 0 0 40px rgba(255,255,255,0.3); }
-  50% { box-shadow: 0 0 35px rgba(255,215,0,1), 0 0 80px rgba(255,255,255,0.8); }
-  100% { box-shadow: 0 0 15px rgba(255,215,0,0.5), 0 0 40px rgba(255,255,255,0.3); }
+  0% { box-shadow: 0 0 18px rgba(255,215,0,0.6), 0 0 40px rgba(255,255,255,0.4); }
+  50% { box-shadow: 0 0 40px rgba(255,215,0,1), 0 0 90px rgba(255,255,255,0.9); }
+  100% { box-shadow: 0 0 18px rgba(255,215,0,0.6), 0 0 40px rgba(255,255,255,0.4); }
 }
 @keyframes pulseCountdown {
   0% { transform: scale(0.8); opacity: 0; }
-  50% { transform: scale(1.2); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 1; }
   100% { transform: scale(1); opacity: 1; }
 }
 `;
@@ -280,6 +288,8 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
   const [countdown, setCountdown] = useState(5);
 
   const [centerName, setCenterName] = useState("");
+  const [centerPosition, setCenterPosition] = useState(null);
+
   const [revealedRanks, setRevealedRanks] = useState({});
   const [bottomIndex, setBottomIndex] = useState(0);
 
@@ -319,7 +329,7 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
     { label: "1ère dauphine", position: 2 },
   ];
 
-  // INTRO : compte à rebours
+  // INTRO : compte à rebours + texte
   useEffect(() => {
     if (phase !== "intro") return;
     if (countdown < -1) return;
@@ -331,7 +341,7 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
     return () => clearTimeout(timer);
   }, [phase, countdown]);
 
-  // Passage automatique à la phase suivante après le compte à rebours
+  // Passage auto après intro
   useEffect(() => {
     if (phase !== "intro") return;
     if (countdown === -1) {
@@ -343,7 +353,7 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
         } else {
           setPhase("top5");
         }
-      }, 700);
+      }, 800);
       return () => clearTimeout(timer);
     }
   }, [phase, countdown, totalPlayers]);
@@ -352,10 +362,10 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
   useEffect(() => {
     if (phase !== "bottom") return;
 
-    // Tous révélés → on passe au top5
     if (bottomIndex >= bottomPositions.length) {
       const timer = setTimeout(() => {
         setCenterName("");
+        setCenterPosition(null);
         setPhase("top5");
       }, 1500);
       return () => clearTimeout(timer);
@@ -363,10 +373,9 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
 
     const position = bottomPositions[bottomIndex];
     const player = rankingDesc[position - 1];
-
     if (!player) return;
 
-    // On met le nom au centre avec animation
+    setCenterPosition(position);
     setCenterName(player.pseudo);
     setRevealedRanks((prev) => ({
       ...prev,
@@ -375,27 +384,27 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
 
     const timer = setTimeout(() => {
       setBottomIndex((i) => i + 1);
-    }, 3000); // ~3 seconds par joueur
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [phase, bottomIndex, bottomPositions, rankingDesc]);
 
-  // PHASE TOP 5 : affichage groupé, petite pause avant les dauphines
+  // PHASE TOP5 : petite pause
   useEffect(() => {
     if (phase !== "top5") return;
     const timer = setTimeout(() => {
       setCenterName("");
+      setCenterPosition(null);
       setPhase("dauphines");
     }, 3500);
     return () => clearTimeout(timer);
   }, [phase]);
 
-  // PHASE DAUPHINES
+  // PHASE DAUPHINES : 4e,3e,2e,1ère
   useEffect(() => {
     if (phase !== "dauphines") return;
 
     if (currentDauphineStep >= dauphineConfig.length) {
-      // Toutes les dauphines ont été révélées → winner
       const timer = setTimeout(() => {
         setPhase("winner");
       }, 2500);
@@ -404,36 +413,39 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
 
     setShowDauphineName(false);
     setCenterName("");
+    setCenterPosition(null);
 
-    const showTimer = setTimeout(() => {
+    const suspenseTimer = setTimeout(() => {
       const step = dauphineConfig[currentDauphineStep];
       const player = rankingDesc[step.position - 1];
       if (player) {
         setCenterName(player.pseudo);
+        setCenterPosition(step.position);
         setShowDauphineName(true);
         setRevealedRanks((prev) => ({
           ...prev,
           [step.position]: true,
         }));
       }
-    }, 3000); // 3 sec de suspense
+    }, 3000); // 3s de "..." avant le nom
 
     const nextTimer = setTimeout(() => {
       setCurrentDauphineStep((s) => s + 1);
-    }, 7000); // 3s suspense + 4s affichage
+    }, 7000); // 3s suspense + 4s nom
 
     return () => {
-      clearTimeout(showTimer);
+      clearTimeout(suspenseTimer);
       clearTimeout(nextTimer);
     };
   }, [phase, currentDauphineStep, dauphineConfig, rankingDesc]);
 
-  // PHASE WINNER : couronnement
+  // PHASE WINNER
   useEffect(() => {
     if (phase !== "winner") return;
     const winner = rankingDesc[0];
     if (winner) {
       setCenterName(winner.pseudo);
+      setCenterPosition(1);
       setRevealedRanks((prev) => ({
         ...prev,
         1: true,
@@ -478,20 +490,27 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
     }
   };
 
+  // ---------- RENDUS ----------
+
   const renderIntro = () => (
     <>
       <div
         style={{
-          fontSize: 22,
+          fontSize: 24,
           textAlign: "center",
           marginTop: 25,
           animation: "textFlyIn 0.9s ease-out",
+          lineHeight: 1.4,
         }}
       >
         Miss France est élue…
         <br />
+        <span style={{ fontSize: 20 }}>
+          mais pour nous, <b>qui a gagné ???</b>
+        </span>
+        <br />
         <span style={{ fontSize: 18, opacity: 0.9 }}>
-          mais pour nous… qui a gagné Miss Prono 2026 ?
+          Les résultats dans…
         </span>
       </div>
 
@@ -509,24 +528,25 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
 
   const renderStageTopText = () => {
     if (phase === "bottom") {
-      const pos =
-        bottomIndex < bottomPositions.length
-          ? bottomPositions[bottomIndex]
-          : null;
+      if (centerPosition) {
+        const label =
+          centerPosition === 1
+            ? "1er"
+            : `${centerPosition}ème`;
 
-      if (pos) {
         return (
           <div style={styles.stageTopText}>
-            Classement en cours…{" "}
-            <span style={{ opacity: 0.85 }}>
-              place <b>{pos}ème</b> en révélation
+            {`Place ${label} :`}{" "}
+            <span style={{ fontWeight: "bold" }}>
+              révélation en cours…
             </span>
           </div>
         );
       }
       return (
         <div style={styles.stageTopText}>
-          Préparation du <b>TOP 5</b>…
+          Classement en cours…{" "}
+          <span style={{ opacity: 0.85 }}>du dernier jusqu’au 6ème</span>
         </div>
       );
     }
@@ -544,12 +564,10 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
       if (!stepCfg) return null;
       return (
         <div style={styles.stageTopText}>
-          <span style={{ fontSize: 20 }}>
-            {stepCfg.label}…
-          </span>
+          <span style={{ fontSize: 20 }}>{stepCfg.label}…</span>
           {!showDauphineName && (
             <span style={{ opacity: 0.8, marginLeft: 6 }}>
-              Suspense…
+              suspense…
             </span>
           )}
         </div>
@@ -561,8 +579,8 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
         <div style={styles.stageTopText}>
           Et notre grande gagnante…
           <br />
-          <span style={{ fontSize: 16, opacity: 0.85 }}>
-            Miss Prono 2026 est…
+          <span style={{ fontSize: 17, opacity: 0.9 }}>
+            Miss Prono 2026 est… et restera…
           </span>
         </div>
       );
@@ -571,29 +589,56 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
     return null;
   };
 
-  const renderCenterName = () => {
-    if (!centerName) return null;
+  const renderCenter = () => {
+    if (phase === "intro") return renderIntro();
 
-    return (
-      <div
-        style={{
-          ...styles.centerName,
-          animation: "nameFromFar 0.8s ease-out",
-        }}
-      >
-        {centerName}
-      </div>
-    );
+    if (centerName) {
+      return (
+        <>
+          {centerPosition && phase === "bottom" && (
+            <div style={styles.centerLabel}>
+              {centerPosition === 1
+                ? "1er"
+                : `${centerPosition}ème`}{" "}
+              place
+            </div>
+          )}
+          {phase === "dauphines" && (
+            <div style={styles.centerLabel}>
+              {centerPosition === 5
+                ? "4ème dauphine"
+                : centerPosition === 4
+                ? "3ème dauphine"
+                : centerPosition === 3
+                ? "2ème dauphine"
+                : centerPosition === 2
+                ? "1ère dauphine"
+                : ""}
+            </div>
+          )}
+          <div
+            style={{
+              ...styles.centerName,
+              animation: "nameFromFar 0.8s ease-out",
+            }}
+          >
+            {centerName}
+          </div>
+        </>
+      );
+    }
+
+    return null;
   };
 
   const renderTop5Block = () => {
-    if (top5.length === 0) return null;
+    if (top5.length === 0 || phase === "intro") return null;
 
     const winnerName = rankingDesc[0]?.pseudo;
 
     return (
       <div style={styles.top5Wrapper}>
-        <div style={styles.top5Title}>TOP 5 Miss Prono 2026</div>
+        <div style={styles.top5Title}>TOP 5 — Miss Prono 2026</div>
         <div style={styles.top5Grid}>
           {top5.map((p, idx) => {
             const position = idx + 1;
@@ -611,7 +656,9 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
 
             return (
               <div key={p.pseudo} style={styles.top5Card(isWinner)}>
-                {isWinner && <div style={styles.crown}>👑</div>}
+                {position === 1 && (
+                  <div style={styles.crown}>👑</div>
+                )}
                 <div style={styles.top5Pos}>{label}</div>
                 <div style={styles.top5Name}>{p.pseudo}</div>
               </div>
@@ -652,6 +699,10 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
         {rankingDesc.map((p, index) => {
           const position = index + 1;
           const revealed = !!revealedRanks[position];
+
+          const isTop5 = position <= 5;
+          const isWinner = position === 1;
+
           const label =
             position === 1
               ? "1er"
@@ -664,7 +715,10 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
           return (
             <div
               key={p.pseudo}
-              style={styles.rankingRow(revealed && position <= 5)}
+              style={styles.rankingRow(
+                revealed && isTop5,
+                revealed && !isTop5
+              )}
             >
               <div style={styles.rankingPos}>{label}</div>
               <div style={styles.rankingName}>
@@ -680,24 +734,9 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
     );
   };
 
-  const renderStageContent = () => {
-    if (phase === "intro") {
-      return renderIntro();
-    }
-
-    return (
-      <>
-        {renderStageTopText()}
-        {renderCenterName()}
-        {renderTop5Block()}
-        {renderWinnerBadge()}
-      </>
-    );
-  };
-
   return (
     <>
-      <style>{introKeyframes}</style>
+      <style>{keyframes}</style>
       <div style={styles.overlay} />
       <div style={styles.inner}>
         <div style={styles.topBar}>
@@ -725,21 +764,24 @@ export default function FinaleOverlay({ players, adminSelections, isAdmin }) {
 
           {/* SCÈNE CENTRALE */}
           <div style={styles.stage}>
-            {/* Décor spotlights légers */}
+            {/* Spotlights / halo */}
             <div
               style={{
                 position: "absolute",
                 inset: -80,
                 pointerEvents: "none",
                 background:
-                  "radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 60%)",
+                  "radial-gradient(circle at top, rgba(255,255,255,0.18), transparent 60%)",
                 mixBlendMode: "screen",
                 opacity: 0.7,
                 animation: "spotlights 8s ease-in-out infinite",
               }}
             />
             <div style={{ position: "relative", zIndex: 2 }}>
-              {renderStageContent()}
+              {renderStageTopText()}
+              {renderCenter()}
+              {renderTop5Block()}
+              {renderWinnerBadge()}
             </div>
           </div>
         </div>
