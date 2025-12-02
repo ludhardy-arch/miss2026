@@ -36,7 +36,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
     } else if (introStep === 1) {
       timer = setTimeout(() => setIntroStep(2), 4000);
     } else if (introStep === 2 && countdown > 0) {
-      timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+      timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
     } else if (introStep === 2 && countdown === 0) {
       timer = setTimeout(() => setPhase("reveal"), 1800);
     }
@@ -50,7 +50,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
 
     setShowNameDelay(false);
     const timer = setTimeout(() => setShowNameDelay(true), 2500);
-    const next = setTimeout(() => setStep(s => s + 1), 5500);
+    const next = setTimeout(() => setStep((s) => s + 1), 5500);
 
     return () => {
       clearTimeout(timer);
@@ -58,8 +58,8 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
     };
   }, [phase, step, ranking.length]);
 
-  // ------------- CORRECTION ANTI-BOUCLE ------------------
-  // 1) Passage au gagnant → UNE SEULE FOIS
+  // ----------- FIX ANTI-BOUCLE GAGNANT -------------
+  // 1) Passage au gagnant UNE FOIS
   useEffect(() => {
     if (
       phase === "reveal" &&
@@ -71,7 +71,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
     }
   }, [phase, step, ranking.length, winnerPhase]);
 
-  // 2) Déroulé des phases gagnant (ne dépend que de winnerPhase)
+  // 2) Phases gagnant → ne dépend que de winnerPhase
   useEffect(() => {
     let timer;
     let conf;
@@ -81,7 +81,6 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
     } else if (winnerPhase === 2) {
       timer = setTimeout(() => setWinnerPhase(3), 3000);
     } else if (winnerPhase === 3) {
-      // Confettis UNE SEULE FOIS
       confetti({ particleCount: 300, spread: 100, origin: { y: 0.55 } });
       conf = setTimeout(() => {
         confetti({ particleCount: 200, spread: 120, origin: { y: 0.6 } });
@@ -93,7 +92,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
       if (conf) clearTimeout(conf);
     };
   }, [winnerPhase]);
-  // --------------------------------------------------------
+  // --------------------------------------------------
 
   const quit = () =>
     confirm("Quitter le show ?") && updateFinaleStarted?.(false);
@@ -106,7 +105,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
       {/* FOND */}
       <div
         style={{
-          position: "fixed",
+          position: "absolute",
           inset: 0,
           background:
             "linear-gradient(135deg, #0f0f3d 0%, #000428 50%, #000814 100%)",
@@ -115,7 +114,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
       />
       <div
         style={{
-          position: "fixed",
+          position: "absolute",
           inset: 0,
           background: `radial-gradient(circle at 20% 20%, rgba(100,150,255,0.4), transparent 50%),
                         radial-gradient(circle at 80% 80%, rgba(255,215,0,0.4), transparent 50%)`,
@@ -124,10 +123,15 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
         }}
       />
 
+      {/* CONTENEUR PRINCIPAL — FIX MOBILE AVEC 100dvh */}
       <div
         style={{
-          position: "fixed",
-          inset: 0,
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100dvh", // 🔥 corrige la visibilité sur smartphone
+          overflow: "hidden",
           zIndex: 10000,
           display: "flex",
           flexDirection: "column",
@@ -176,6 +180,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
             flexDirection: "column",
             justifyContent: "center",
             padding: "20px",
+            overflow: "hidden",
           }}
         >
           {/* INTRO */}
@@ -216,7 +221,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
             </div>
           )}
 
-          {/* RÉVÉLATION */}
+          {/* REVEAL */}
           {phase === "reveal" && currentPlayer && (
             <div>
               <div style={{ fontSize: "3.2rem", marginBottom: "2rem" }}>
@@ -241,7 +246,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
           {winnerPhase > 0 && winner && (
             <div
               style={{
-                minHeight: "70vh",
+                minHeight: "50vh",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "center",
@@ -287,14 +292,14 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
           )}
         </div>
 
-        {/* CLASSEMENT FINAL */}
+        {/* CLASSEMENT FINAL — FIX MOBILE */}
         {winnerPhase === 3 && (
           <div
             style={{
               background: "rgba(0,0,0,0.85)",
               padding: "25px 20px",
               borderRadius: "20px 20px 0 0",
-              maxHeight: "50vh",
+              maxHeight: "40dvh", // 🔥 lisible sur smartphone
               overflowY: "auto",
             }}
           >
