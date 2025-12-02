@@ -8,9 +8,10 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
   const { updateFinaleStarted } = useContext(AppContext) || {};
 
   const [phase, setPhase] = useState("intro");
+  const [introStep, setIntroStep] = useState(0); // 0: Miss France, 1: Mais pour nous, 2: countdown
   const [countdown, setCountdown] = useState(5);
   const [step, setStep] = useState(0); // pour les révélations progressives
-  const [showName, setShowName] = useState(false); // pour le décalage du nom
+  const [showNameDelay, setShowNameDelay] = useState(false); // pour décalage nom
 
   const ranking = React.useMemo(() => {
     return Object.entries(players || {})
@@ -24,57 +25,70 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
 
   const winner = ranking[0];
   const top5 = ranking.slice(0, 5);
+  const currentPlayer = step < ranking.length ? ranking[ranking.length - 1 - step] : null;
 
-  // Compte à rebours intro
+  // INTRO SUB-PHASES
   useEffect(() => {
-    if (phase !== "intro" || countdown <= 0) return;
-    const t = setTimeout(() => setCountdown(c => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [phase, countdown]);
+    if (phase !== "intro") return;
 
-  useEffect(() => {
-    if (countdown === 0 && phase === "intro") {
-      setTimeout(() => setPhase("reveal"), 5000); // +4s pour l'intro + 1s base
+    if (introStep === 0) {
+      const t = setTimeout(() => setIntroStep(1), 4000); // +4s pour "Miss France est élue..."
+      return () => clearTimeout(t);
     }
-  }, [countdown, phase]);
 
-  // Avancer automatiquement dans les révélations
+    if (introStep === 1) {
+      const t = setTimeout(() => setIntroStep(2), 4000); // +4s pour "Mais pour nous..."
+      return () => clearTimeout(t);
+    }
+
+    if (introStep === 2 && countdown > 0) {
+      const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+      return () => clearTimeout(t);
+    }
+
+    if (introStep === 2 && countdown === 0) {
+      setTimeout(() => setPhase("reveal"), 2000); // Petite pause après "GO !"
+    }
+  }, [phase, introStep, countdown]);
+
+  // RÉVÉLATIONS AVEC DÉCALAGE
   useEffect(() => {
     if (phase !== "reveal") return;
     if (step >= ranking.length + 5) return;
 
-    setShowName(false);
-    const nameTimer = setTimeout(() => setShowName(true), 2500); // 2.5s pour le nom
+    setShowNameDelay(false); // Reset pour chaque step
 
-    const nextTimer = setTimeout(() => setStep(s => s + 1), step < ranking.length - 5 ? 6000 : step < ranking.length - 1 ? 9000 : 7000); // ajusté pour le décalage
+    const delayTimer = setTimeout(() => setShowNameDelay(true), 2500); // 2.5s pour montrer le nom
+
+    const nextTimer = setTimeout(() => {
+      setStep(s => s + 1);
+    }, step < ranking.length - 5 ? 5000 : step < ranking.length - 1 ? 8000 : 5000); // Plus long pour dauphines
 
     return () => {
-      clearTimeout(nameTimer);
+      clearTimeout(delayTimer);
       clearTimeout(nextTimer);
     };
   }, [phase, step, ranking.length]);
 
-  // Confettis uniquement à la fin
+  // CONFETTIS
   useEffect(() => {
     if (step === ranking.length + 2 && winner) {
       confetti({
-        particleCount: 150,
-        spread: 70,
+        particleCount: 200,
+        spread: 80,
         origin: { y: 0.6 },
         colors: ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24']
       });
     }
-  }, [step, winner]);
+  }, [step, winner, ranking.length]);
 
   const quit = () => {
     if (confirm("Quitter le show ?")) updateFinaleStarted?.(false);
   };
 
-  const currentPlayer = step < ranking.length ? ranking[ranking.length - 1 - step] : null;
-
   return (
     <>
-      {/* FOND MISS FRANCE 100% MOBILE */}
+      {/* FOND */}
       <div style={{
         position: "fixed",
         inset: 0,
@@ -82,7 +96,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
         zIndex: 9998,
       }} />
 
-      {/* LUMIÈRES BLEUES + DORÉES */}
+      {/* LUMIÈRES */}
       <div style={{
         position: "fixed",
         inset: 0,
@@ -103,6 +117,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
         fontFamily: "'Bebas Neue', Arial, sans-serif",
         color: "white",
         textAlign: "center",
+        overflow: "hidden",
       }}>
 
         {/* HEADER */}
@@ -112,6 +127,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
           fontSize: "1.8rem",
           letterSpacing: "4px",
           textShadow: "0 0 20px #ffd700",
+          position: "relative",
         }}>
           MISS PRONO 2026
           {isAdmin && (
@@ -124,6 +140,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
               border: "none",
               borderRadius: 20,
               fontSize: "0.9rem",
+              cursor: "pointer",
             }}>
               Quitter
             </button>
@@ -136,30 +153,36 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
           {/* INTRO */}
           {phase === "intro" && (
             <div>
-              <div style={{ fontSize: "3.2rem", marginBottom: "2rem", lineHeight: 1.2 }}>
-                Miss France<br />est élue…
-              </div>
-              <div style={{ fontSize: "2.8rem", margin: "2rem 0", color: "#ffd700" }}>
-                Mais pour nous<br />QUI A GAGNÉ ?
-              </div>
-              <div style={{
-                fontSize: countdown > 0 ? "12rem" : "5rem",
-                fontWeight: 900,
-                marginTop: "3rem",
-                textShadow: "0 0 40px #ffd700",
-              }}>
-                {countdown > 0 ? countdown : "GO !"}
-              </div>
+              {introStep >= 0 && (
+                <div style={{ fontSize: "3.2rem", marginBottom: "2rem", lineHeight: 1.2 }}>
+                  Miss France<br />est élue…
+                </div>
+              )}
+              {introStep >= 1 && (
+                <div style={{ fontSize: "2.8rem", margin: "2rem 0", color: "#ffd700" }}>
+                  Mais pour nous<br />QUI A GAGNÉ ?
+                </div>
+              )}
+              {introStep >= 2 && (
+                <div style={{
+                  fontSize: countdown > 0 ? "12rem" : "5rem",
+                  fontWeight: 900,
+                  marginTop: "3rem",
+                  textShadow: "0 0 40px #ffd700",
+                }}>
+                  {countdown > 0 ? countdown : "GO !"}
+                </div>
+              )}
             </div>
           )}
 
-          {/* RÉVÉLATIONS EN COURS */}
+          {/* RÉVÉLATIONS BOTTOM */}
           {phase === "reveal" && currentPlayer && step < ranking.length - 5 && (
             <div style={{ animation: "zoomIn 1.5s ease-out" }}>
-              <div style={{ fontSize: "3rem", marginBottom: "1rem", color: "#aaa" }}>
+              <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>
                 À la {currentPlayer.rank}ème place :
               </div>
-              {showName && (
+              {showNameDelay && (
                 <div style={{ fontSize: "5.5rem", fontWeight: 900 }}>
                   {currentPlayer.pseudo}
                 </div>
@@ -167,13 +190,13 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
             </div>
           )}
 
-          {/* TOP 5 */}
+          {/* DAUPHINES */}
           {phase === "reveal" && step >= ranking.length - 5 && step < ranking.length - 1 && (
             <div>
               <div style={{ fontSize: "3.5rem", marginBottom: "3rem", color: "#ffd700" }}>
-                {step === ranking.length - 5 ? "LES 5 FINALISTES" : `${5 - (step - (ranking.length - 5))}ème dauphine`}
+                {5 - (step - (ranking.length - 5))}ème dauphine :
               </div>
-              {showName && top5[step - (ranking.length - 5)] && (
+              {showNameDelay && top5[step - (ranking.length - 5)] && (
                 <div style={{ fontSize: "6rem", fontWeight: 900, textShadow: "0 0 60px #ffd700" }}>
                   {top5[step - (ranking.length - 5)].pseudo}
                 </div>
@@ -181,7 +204,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
             </div>
           )}
 
-          {/* LE GRAND FINAL */}
+          {/* GAGNANT */}
           {phase === "reveal" && step >= ranking.length - 1 && winner && (
             <div>
               <div style={{ fontSize: "4rem", marginBottom: "2rem", color: "#ffd700" }}>
@@ -200,16 +223,17 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
 
         </div>
 
-        {/* CLASSEMENT FINAL EN BAS (DÉFILABLE) */}
+        {/* CLASSEMENT FINAL SCROLLABLE */}
         {phase === "reveal" && step >= ranking.length && (
           <div style={{
             background: "rgba(0,0,0,0.8)",
             padding: "20px",
             borderRadius: "20px 20px 0 0",
             fontSize: "1.5rem",
-            maxHeight: "40vh",
             overflowY: "auto",
+            maxHeight: "50vh",
           }}>
+            <h3 style={{ fontSize: "2rem", marginBottom: "1rem" }}>Classement Final</h3>
             {ranking.map((p, i) => (
               <div key={p.pseudo} style={{
                 padding: "12px 0",
@@ -217,7 +241,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
                 fontWeight: p.rank === 1 ? "bold" : "normal",
                 color: p.rank === 1 ? "#ffd700" : "white",
               }}>
-                {i === 0 ? "1er" : `${i + 1}ème`} → {p.pseudo} ({p.points} pts)
+                {p.rank === 1 ? "1er" : `${p.rank}ème`} → {p.pseudo} ({p.points} pts)
               </div>
             ))}
           </div>
