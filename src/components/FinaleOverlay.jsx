@@ -1,4 +1,4 @@
-// src/components/FinalShow.jsx  →  VERSION FINALE 100% VALIDÉE
+// src/components/FinalShow.jsx → VERSION FINALE – PROMIS C’EST LA DERNIÈRE
 import React, { useState, useEffect, useContext } from "react";
 import confetti from "canvas-confetti";
 import { calculatePoints } from "../services/points";
@@ -10,9 +10,9 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
   const [phase, setPhase] = useState("intro");
   const [introStep, setIntroStep] = useState(0);
   const [countdown, setCountdown] = useState(5);
-  const [step, setStep] = useState(0); // 0 → dernier, ..., ranking.length-6 → 6ème, puis dauphines, puis gagnant
-  const [showNameDelay, setShowNameDelay] = useState(false);
-  const [winnerPhase, setWinnerPhase] = useState(0); // 0 = rien, 1 = "MISS PRONO 2026", 2 = "est ET restera...", 3 = prénom + confettis
+  const [revealIndex, setRevealIndex] = useState(0); // 0 = dernier, augmente jusqu’au gagnant
+  const [showName, setShowName] = useState(false);
+  const [winnerStep, setWinnerStep] = useState(0); // 0-1-2-3 pour le couronnement
 
   const ranking = React.useMemo(() => {
     return Object.entries(players || {})
@@ -24,62 +24,58 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
       .map((p, i) => ({ ...p, rank: i + 1 }));
   }, [players, adminSelections]);
 
-  const winner = ranking[0];
   const total = ranking.length;
+  const winner = ranking[0];
 
-  // === INTRO ===
+  // INTRO
   useEffect(() => {
     if (phase !== "intro") return;
-    if (introStep === 0) { setTimeout(() => setIntroStep(1), 4000); }
-    else if (introStep === 1) { setTimeout(() => setIntroStep(2), 4000); }
+    if (introStep === 0) setTimeout(() => setIntroStep(1), 4000);
+    else if (introStep === 1) setTimeout(() => setIntroStep(2), 4000);
     else if (introStep === 2 && countdown > 0) {
       const t = setTimeout(() => setCountdown(c => c - 1), 1000);
       return () => clearTimeout(t);
     }
-    else if (introStep === 2 && countdown === 0) {
-      setTimeout(() => setPhase("reveal"), 1500);
-    }
+    else if (countdown === 0) setTimeout(() => setPhase("reveal"), 1500);
   }, [phase, introStep, countdown]);
 
-  // === RÉVÉLATIONS PROGRESSIVES ===
+  // RÉVÉLATIONS AUTOMATIQUES
   useEffect(() => {
     if (phase !== "reveal") return;
+    setShowName(false);
+    setWinnerStep(0);
 
-    // Reset du delay
-    setShowNameDelay(false);
-    setWinnerPhase(0);
-
-    // On révèle du dernier jusqu’au 6ème (si >5 joueurs)
-    if (step < total - 5) {
-      setTimeout(() => setShowNameDelay(true), 2500);
-      const next = setTimeout(() => setStep(s => s + 1), 5500);
+    // 1. Du dernier jusqu’au 6ème (si existe)
+    if (revealIndex < Math.max(0, total - 6)) {
+      setTimeout(() => setShowName(true), 2500);
+      const next = setTimeout(() => setRevealIndex(i => i + 1), 5500);
       return () => clearTimeout(next);
     }
 
-    // Dauphines : 5ème → 4ème → 3ème → 2ème place
-    else if (step < total - 1) {
-      setTimeout(() => setShowNameDelay(true), 2500);
-      const next = setTimeout(() => setStep(s => s + 1), 7000);
+    // 2. 5ème → 4ème → 3ème → 2ème place = les 4 dauphines
+    else if (revealIndex < total - 1) {
+      setTimeout(() => setShowName(true), 2500);
+      const next = setTimeout(() => setRevealIndex(i => i + 1), 7000);
       return () => clearTimeout(next);
     }
 
-    // Gagnant : on passe en mode séquentiel
-    else if (step === total - 1) {
-      const t1 = setTimeout(() => setWinnerPhase(1), 2000);   // "MISS PRONO 2026"
-      const t2 = setTimeout(() => setWinnerPhase(2), 4000);   // "est ET restera..."
+    // 3. Gagnante – séquence épique
+    else if (revealIndex === total - 1) {
+      const t1 = setTimeout(() => setWinnerStep(1), 2000);
+      const t2 = setTimeout(() => setWinnerStep(2), 4500);
       const t3 = setTimeout(() => {
-        setWinnerPhase(3);
-        // CONFETTIS DE OUF
+        setWinnerStep(3);
         confetti({ particleCount: 300, spread: 100, origin: { y: 0.55 } });
-        setTimeout(() => confetti({ particleCount: 200, spread: 120, origin: { y: 0.6 } }), 400);
-      }, 6000);
+        setTimeout(() => confetti({ particleCount: 200, spread: 120 }), 500);
+      }, 7000);
       return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
     }
-  }, [phase, step, total]);
+  }, [phase, revealIndex, total]);
 
   const quit = () => confirm("Quitter le show ?") && updateFinaleStarted?.(false);
 
-  const currentPlayer = step < total - 1 ? ranking[total - 1 - step] : null;
+  // Joueur actuellement révélé (sauf la gagnante)
+  const current = revealIndex < total - 1 ? ranking[total - 1 - revealIndex] : null;
 
   return (
     <>
@@ -95,7 +91,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
           {isAdmin && <button onClick={quit} style={{ position: "absolute", right: 15, top: 15, padding: "8px 16px", background: "#c00", border: "none", borderRadius: 20, fontSize: "0.9rem", cursor: "pointer" }}>Quitter</button>}
         </div>
 
-        {/* CONTENU */}
+        {/* CONTENU CENTRAL */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "20px" }}>
 
           {/* INTRO */}
@@ -109,51 +105,48 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
             </div>
           )}
 
-          {/* RÉVÉLATIONS BOTTOM (6ème et moins) */}
-          {phase === "reveal" && step < total - 5 && currentPlayer && (
+          {/* BAS DU CLASSEMENT (dernier → 6ème) */}
+          {phase === "reveal" && revealIndex < Math.max(0, total - 6) && current && (
             <div>
-              <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>À la {currentPlayer.rank}ème place :</div>
-              {showNameDelay && <div style={{ fontSize: "5.5rem", fontWeight: 900, animation: "zoomIn 1.8s ease-out" }}>{currentPlayer.pseudo}</div>}
+              <div style={{ fontSize: "3rem" }}>À la {current.rank}ème place :</div>
+              {showName && <div style={{ fontSize: "5.5rem", fontWeight: 900, marginTop: "2rem", animation: "zoomIn 1.8s ease-out" }}>{current.pseudo}</div>}
             </div>
           )}
 
-          {/* DAUPHINES (5ème → 2ème) */}
-          {phase === "reveal" && step >= total - 5 && step < total - 1 && currentPlayer && (
+          {/* LES 4 DAUPHINES (5ème → 2ème) */}
+          {phase === "reveal" && revealIndex >= Math.max(0, total - 6) && revealIndex < total - 1 && current && (
             <div>
-              <div style={{ fontSize: "3.5rem", color: "#ffd700" }}>
-                {5 - (step - (total - 5))}ème dauphine :
+              <div style={{ fontSize: "3.8rem", color: "#ffd700" }}>
+                {(5 - (revealIndex - Math.max(0, total - 6)))}ème dauphine :
               </div>
-              {showNameDelay && (
-                <div style={{ fontSize: "6rem", fontWeight: 900, textShadow: "0 0 60px #ffd700", marginTop: "2rem", animation: "zoomIn 1.8s ease-out" }}>
-                  {currentPlayer.pseudo}
-                </div>
-              )}
+              {showName && <div style={{ fontSize: "6.5rem", fontWeight: 900, textShadow: "0 0 70px #ffd700", marginTop: "2rem", animation: "zoomIn 1.8s ease-out" }}>
+                {current.pseudo}
+              </div>}
             </div>
           )}
 
-          {/* GAGNANT SÉQUENTIEL */}
-          {phase === "reveal" && step === total - 1 && winner && (
+          {/* GAGNANTE – SÉQUENCE DE FOU */}
+          {phase === "reveal" && revealIndex === total - 1 && winner && (
             <div>
-              {winnerPhase >= 1 && <div style={{ fontSize: "4.5rem", color: "#ffd700", marginBottom: "1rem" }}>MISS PRONO 2026</div>}
-              {winnerPhase >= 2 && <div style={{ fontSize: "4rem", marginBottom: "2rem" }}>est ET restera...</div>}
-              {winnerPhase >= 3 && (
-                <div style={{ fontSize: "7.5rem", fontWeight: 900, textShadow: "0 0 100px #ffd700, 0 0 160px #ff4500", animation: "zoomIn 2s ease-out" }}>
-                  {winner.pseudo}
-                </div>
-              )}
+              {winnerStep >= 1 && <div style={{ fontSize: "5rem", color: "#ffd700" }}>MISS PRONO 2026</div>}
+              {winnerStep >= 2 && <div style={{ fontSize: "4.5rem", margin: "2rem 0" }}>est ET restera...</div>}
+              {winnerStep >= 3 && <div style={{ fontSize: "8rem", fontWeight: 900, textShadow: "0 0 120px #ffd700, 0 0 200px #ff4500", animation: "zoomIn 2s ease-out" }}>
+                {winner.pseudo}
+              </div>}
             </div>
           )}
 
         </div>
 
-        {/* CLASSEMENT FINAL SCROLLABLE */}
-        {phase === "reveal" && step >= total && (
-          <div style={{ background: "rgba(0,0,0,0.8)", padding: "20px", borderRadius: "20px 20px 0 0", fontSize: "1.5rem", overflowY: "auto", maxHeight: "50vh" }}>
-            <h3 style={{ fontSize: "2rem", marginBottom: "1rem" }}>Classement Final</h3>
+        {/* CLASSEMENT FINAL SCROLLABLE (exactement comme avant) */}
+        {phase === "reveal" && revealIndex >= total && (
+          <div style={{ background: "rgba(0,0,0,0.85)", padding: "25px 20px", borderRadius: "20px 20px 0 0", maxHeight: "50vh", overflowY: "auto" }}>
+            <h3 style={{ fontSize: "2.2rem", marginBottom: "20px", color: "#ffd700" }}>CLASSEMENT FINAL</h3>
             {ranking.map((p, i) => (
               <div key={p.pseudo} style={{
-                padding: "12px 0",
-                borderBottom: i < ranking.length - 1 ? "1px solid #333" : "none",
+                padding: "14px 0",
+                borderBottom: i < total - 1 ? "1px solid #444" : "none",
+                fontSize: "1.6rem",
                 fontWeight: p.rank === 1 ? "bold" : "normal",
                 color: p.rank === 1 ? "#ffd700" : "white",
               }}>
@@ -166,11 +159,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
 
       <style jsx>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-        @keyframes zoomIn {
-          0% { transform: scale(0.3); opacity: 0; }
-          70% { transform: scale(1.1); }
-          100% { transform: scale(1); opacity: 1; }
-        }
+        @keyframes zoomIn { 0% { transform: scale(0.2); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
       `}</style>
     </>
   );
