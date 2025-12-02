@@ -1,4 +1,4 @@
-// src/components/FinalShow.jsx → VERSION FINALE CORRIGÉE
+// src/components/FinalShow.jsx – VERSION CORRIGÉE LOGIQUE (STYLE INTACT)
 import React, { useState, useEffect, useContext } from "react";
 import confetti from "canvas-confetti";
 import { calculatePoints } from "../services/points";
@@ -10,9 +10,9 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
   const [phase, setPhase] = useState("intro");
   const [introStep, setIntroStep] = useState(0);
   const [countdown, setCountdown] = useState(5);
-  const [revealIndex, setRevealIndex] = useState(0); // 0 = dernier, augmente jusqu’au gagnant
+  const [revealIndex, setRevealIndex] = useState(0);
   const [showName, setShowName] = useState(false);
-  const [winnerStep, setWinnerStep] = useState(0); // 0-1-2-3 pour le couronnement
+  const [winnerStep, setWinnerStep] = useState(0);
 
   const ranking = React.useMemo(() => {
     return Object.entries(players || {})
@@ -45,22 +45,26 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
     setShowName(false);
     setWinnerStep(0);
 
-    // 1. Du dernier jusqu’au 6ème (si existe)
-    if (revealIndex < Math.max(0, total - 6)) {
+    // Récupère le rang réel du joueur affiché
+    const current = ranking[total - 1 - revealIndex];
+    const rank = current?.rank;
+
+    // PHASE 1 → PLACES NORMALES (rank > 6)
+    if (rank > 6) {
       setTimeout(() => setShowName(true), 2500);
       const next = setTimeout(() => setRevealIndex((i) => i + 1), 5500);
       return () => clearTimeout(next);
     }
 
-    // 2. 5ème → 4ème → 3ème → 2ème place = les 4 dauphines
-    else if (revealIndex < total - 1) {
+    // PHASE 2 → DAUPHINES (rank 5,4,3,2)
+    else if (rank >= 2 && rank <= 5) {
       setTimeout(() => setShowName(true), 2500);
       const next = setTimeout(() => setRevealIndex((i) => i + 1), 7000);
       return () => clearTimeout(next);
     }
 
-    // 3. Gagnante – séquence épique
-    else if (revealIndex === total - 1) {
+    // PHASE 3 → GAGNANTE (rank 1)
+    else if (rank === 1) {
       const t1 = setTimeout(() => setWinnerStep(1), 2000);
       const t2 = setTimeout(() => setWinnerStep(2), 4500);
       const t3 = setTimeout(() => {
@@ -68,10 +72,10 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
         confetti({ particleCount: 300, spread: 100, origin: { y: 0.55 } });
         setTimeout(() => confetti({ particleCount: 200, spread: 120 }), 500);
 
-        // 🔥 AJOUT : afficher automatiquement le CLASSEMENT FINAL
+        // Affichage du classement final
         setTimeout(() => setRevealIndex(total), 4000);
-
       }, 7000);
+
       return () => {
         clearTimeout(t1);
         clearTimeout(t2);
@@ -83,11 +87,10 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
   const quit = () =>
     confirm("Quitter le show ?") && updateFinaleStarted?.(false);
 
-  // Joueur actuellement révélé (sauf la gagnante)
+  // Joueur actuel
   const current =
-    revealIndex < total - 1
-      ? ranking[total - 1 - revealIndex]
-      : null;
+    revealIndex < total ? ranking[total - 1 - revealIndex] : null;
+  const rank = current?.rank;
 
   return (
     <>
@@ -210,114 +213,95 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
             </div>
           )}
 
-          {/* BAS DU CLASSEMENT (dernier → 6ème) */}
-          {phase === "reveal" &&
-            revealIndex < Math.max(0, total - 6) &&
-            current && (
-              <div>
-                <div style={{ fontSize: "3rem" }}>
-                  À la {current.rank}ème place :
-                </div>
-                {showName && (
-                  <div
-                    style={{
-                      fontSize: "5.5rem",
-                      fontWeight: 900,
-                      marginTop: "2rem",
-                      animation: "zoomIn 1.8s ease-out",
-                    }}
-                  >
-                    {current.pseudo}
-                  </div>
-                )}
+          {/* BAS DU CLASSEMENT (RANK > 6) */}
+          {phase === "reveal" && current && rank > 6 && (
+            <div>
+              <div style={{ fontSize: "3rem" }}>
+                À la {rank}ème place :
               </div>
-            )}
-
-          {/* LES 4 DAUPHINES (5ème → 2ème) */}
-          {phase === "reveal" &&
-            revealIndex >= Math.max(0, total - 6) &&
-            revealIndex < total - 1 &&
-            current && (
-              <div>
+              {showName && (
                 <div
                   style={{
-                    fontSize: "3.8rem",
+                    fontSize: "5.5rem",
+                    fontWeight: 900,
+                    marginTop: "2rem",
+                    animation: "zoomIn 1.8s ease-out",
+                  }}
+                >
+                  {current.pseudo}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* DAUPHINES (RANK 5 → 2) */}
+          {phase === "reveal" && current && rank >= 2 && rank <= 5 && (
+            <div>
+              <div
+                style={{
+                  fontSize: "3.8rem",
+                  color: "#ffd700",
+                }}
+              >
+                {6 - rank}ème dauphine :
+              </div>
+              {showName && (
+                <div
+                  style={{
+                    fontSize: "6.5rem",
+                    fontWeight: 900,
+                    textShadow: "0 0 70px #ffd700",
+                    marginTop: "2rem",
+                    animation: "zoomIn 1.8s ease-out",
+                  }}
+                >
+                  {current.pseudo}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* GAGNANTE (RANK 1) */}
+          {phase === "reveal" && current && rank === 1 && (
+            <div>
+              {winnerStep >= 1 && (
+                <div
+                  style={{
+                    fontSize: "5rem",
                     color: "#ffd700",
                   }}
                 >
-                  {
-                    Math.min(
-                      4,
-                      Math.max(
-                        1,
-                        5 -
-                          (revealIndex -
-                            Math.max(0, total - 6))
-                      )
-                    )
-                  }
-                  ème dauphine :
+                  MISS PRONO 2026
                 </div>
-
-                {showName && (
-                  <div
-                    style={{
-                      fontSize: "6.5rem",
-                      fontWeight: 900,
-                      textShadow: "0 0 70px #ffd700",
-                      marginTop: "2rem",
-                      animation: "zoomIn 1.8s ease-out",
-                    }}
-                  >
-                    {current.pseudo}
-                  </div>
-                )}
-              </div>
-            )}
-
-          {/* GAGNANTE – SÉQUENCE DE FOU */}
-          {phase === "reveal" &&
-            revealIndex === total - 1 &&
-            winner && (
-              <div>
-                {winnerStep >= 1 && (
-                  <div
-                    style={{
-                      fontSize: "5rem",
-                      color: "#ffd700",
-                    }}
-                  >
-                    MISS PRONO 2026
-                  </div>
-                )}
-                {winnerStep >= 2 && (
-                  <div
-                    style={{
-                      fontSize: "4.5rem",
-                      margin: "2rem 0",
-                    }}
-                  >
-                    est ET restera...
-                  </div>
-                )}
-                {winnerStep >= 3 && (
-                  <div
-                    style={{
-                      fontSize: "8rem",
-                      fontWeight: 900,
-                      textShadow:
-                        "0 0 120px #ffd700, 0 0 200px #ff4500",
-                      animation: "zoomIn 2s ease-out",
-                    }}
-                  >
-                    {winner.pseudo}
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+              {winnerStep >= 2 && (
+                <div
+                  style={{
+                    fontSize: "4.5rem",
+                    margin: "2rem 0",
+                  }}
+                >
+                  est ET restera...
+                </div>
+              )}
+              {winnerStep >= 3 && (
+                <div
+                  style={{
+                    fontSize: "8rem",
+                    fontWeight: 900,
+                    textShadow:
+                      "0 0 120px #ffd700, 0 0 200px #ff4500",
+                    animation: "zoomIn 2s ease-out",
+                  }}
+                >
+                  {winner.pseudo}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* CLASSEMENT FINAL SCROLLABLE */}
+        {/* CLASSEMENT FINAL */}
         {phase === "reveal" && revealIndex >= total && (
           <div
             style={{
@@ -342,11 +326,9 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
               <div
                 key={p.pseudo}
                 style={{
-                  padding: "14px 0", 
+                  padding: "14px 0",
                   borderBottom:
-                    i < total - 1
-                      ? "1px solid #444"
-                      : "none",
+                    i < total - 1 ? "1px solid #444" : "none",
                   fontSize: "1.6rem",
                   fontWeight:
                     p.rank === 1 ? "bold" : "normal",
