@@ -10,6 +10,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
   const [phase, setPhase] = useState("intro");
   const [countdown, setCountdown] = useState(5);
   const [step, setStep] = useState(0); // pour les révélations progressives
+  const [showName, setShowName] = useState(false); // pour le décalage du nom
 
   const ranking = React.useMemo(() => {
     return Object.entries(players || {})
@@ -33,17 +34,24 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
 
   useEffect(() => {
     if (countdown === 0 && phase === "intro") {
-      setTimeout(() => setPhase("reveal"), 1000);
+      setTimeout(() => setPhase("reveal"), 5000); // +4s pour l'intro + 1s base
     }
   }, [countdown, phase]);
 
   // Avancer automatiquement dans les révélations
   useEffect(() => {
     if (phase !== "reveal") return;
-    if (step >= ranking.length + 5) return; // un peu d'attente après le gagnant
+    if (step >= ranking.length + 5) return;
 
-    const timer = setTimeout(() => setStep(s => s + 1), step < ranking.length - 5 ? 3200 : step < ranking.length - 1 ? 6000 : 4000);
-    return () => clearTimeout(timer);
+    setShowName(false);
+    const nameTimer = setTimeout(() => setShowName(true), 2500); // 2.5s pour le nom
+
+    const nextTimer = setTimeout(() => setStep(s => s + 1), step < ranking.length - 5 ? 6000 : step < ranking.length - 1 ? 9000 : 7000); // ajusté pour le décalage
+
+    return () => {
+      clearTimeout(nameTimer);
+      clearTimeout(nextTimer);
+    };
   }, [phase, step, ranking.length]);
 
   // Confettis uniquement à la fin
@@ -148,12 +156,14 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
           {/* RÉVÉLATIONS EN COURS */}
           {phase === "reveal" && currentPlayer && step < ranking.length - 5 && (
             <div style={{ animation: "zoomIn 1.5s ease-out" }}>
-              <div style={{ fontSize: "5.5rem", fontWeight: 900, marginBottom: "1rem" }}>
-                {currentPlayer.pseudo}
+              <div style={{ fontSize: "3rem", marginBottom: "1rem", color: "#aaa" }}>
+                À la {currentPlayer.rank}ème place :
               </div>
-              <div style={{ fontSize: "3rem", color: "#aaa" }}>
-                {currentPlayer.rank}ème place
-              </div>
+              {showName && (
+                <div style={{ fontSize: "5.5rem", fontWeight: 900 }}>
+                  {currentPlayer.pseudo}
+                </div>
+              )}
             </div>
           )}
 
@@ -163,7 +173,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
               <div style={{ fontSize: "3.5rem", marginBottom: "3rem", color: "#ffd700" }}>
                 {step === ranking.length - 5 ? "LES 5 FINALISTES" : `${5 - (step - (ranking.length - 5))}ème dauphine`}
               </div>
-              {top5[step - (ranking.length - 5)] && (
+              {showName && top5[step - (ranking.length - 5)] && (
                 <div style={{ fontSize: "6rem", fontWeight: 900, textShadow: "0 0 60px #ffd700" }}>
                   {top5[step - (ranking.length - 5)].pseudo}
                 </div>
@@ -185,26 +195,25 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
               }}>
                 {winner.pseudo}
               </div>
-              <div style={{ fontSize: "3rem", color: "#ffd700" }}>
-                Championne incontestée !
-              </div>
             </div>
           )}
 
         </div>
 
-        {/* CLASSEMENT FINAL EN BAS */}
+        {/* CLASSEMENT FINAL EN BAS (DÉFILABLE) */}
         {phase === "reveal" && step >= ranking.length && (
           <div style={{
             background: "rgba(0,0,0,0.8)",
             padding: "20px",
             borderRadius: "20px 20px 0 0",
             fontSize: "1.5rem",
+            maxHeight: "40vh",
+            overflowY: "auto",
           }}>
-            {top5.map((p, i) => (
+            {ranking.map((p, i) => (
               <div key={p.pseudo} style={{
                 padding: "12px 0",
-                borderBottom: i < 4 ? "1px solid #333" : "none",
+                borderBottom: i < ranking.length - 1 ? "1px solid #333" : "none",
                 fontWeight: p.rank === 1 ? "bold" : "normal",
                 color: p.rank === 1 ? "#ffd700" : "white",
               }}>
