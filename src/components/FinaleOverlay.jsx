@@ -26,7 +26,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
 
   const winner = ranking[0];
 
-  // INTRO longue et classe
+  // INTRO
   useEffect(() => {
     if (phase !== "intro") return;
     let timer;
@@ -44,7 +44,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
     return () => clearTimeout(timer);
   }, [phase, introStep, countdown]);
 
-  // RÉVÉLATION du dernier jusqu’au 2ème
+  // RÉVÉLATION DU DERNIER AU 2ÈME
   useEffect(() => {
     if (phase !== "reveal" || step >= ranking.length - 1) return;
 
@@ -58,38 +58,52 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
     };
   }, [phase, step, ranking.length]);
 
-  // FINAL -- Correction du bug winnerPhase (boucle infinie)
+  // ------------- CORRECTION ANTI-BOUCLE ------------------
+  // 1) Passage au gagnant → UNE SEULE FOIS
   useEffect(() => {
-    let timerPhase;
-    let timerConfetti;
+    if (
+      phase === "reveal" &&
+      step === ranking.length - 1 &&
+      winnerPhase === 0
+    ) {
+      const t = setTimeout(() => setWinnerPhase(1), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [phase, step, ranking.length, winnerPhase]);
 
-    if (step === ranking.length - 1 && phase === "reveal" && winnerPhase === 0) {
-      timerPhase = setTimeout(() => setWinnerPhase(1), 3000);
-    } else if (winnerPhase === 1) {
-      timerPhase = setTimeout(() => setWinnerPhase(2), 3000);
+  // 2) Déroulé des phases gagnant (ne dépend que de winnerPhase)
+  useEffect(() => {
+    let timer;
+    let conf;
+
+    if (winnerPhase === 1) {
+      timer = setTimeout(() => setWinnerPhase(2), 3000);
     } else if (winnerPhase === 2) {
-      timerPhase = setTimeout(() => setWinnerPhase(3), 3000);
-    } else if (winnerPhase === 3 && winner) {
+      timer = setTimeout(() => setWinnerPhase(3), 3000);
+    } else if (winnerPhase === 3) {
+      // Confettis UNE SEULE FOIS
       confetti({ particleCount: 300, spread: 100, origin: { y: 0.55 } });
-      timerConfetti = setTimeout(() => {
+      conf = setTimeout(() => {
         confetti({ particleCount: 200, spread: 120, origin: { y: 0.6 } });
       }, 400);
     }
 
     return () => {
-      if (timerPhase) clearTimeout(timerPhase);
-      if (timerConfetti) clearTimeout(timerConfetti);
+      if (timer) clearTimeout(timer);
+      if (conf) clearTimeout(conf);
     };
-  }, [step, winnerPhase, winner, ranking.length, phase]);
+  }, [winnerPhase]);
+  // --------------------------------------------------------
 
-  const quit = () => confirm("Quitter le show ?") && updateFinaleStarted?.(false);
+  const quit = () =>
+    confirm("Quitter le show ?") && updateFinaleStarted?.(false);
 
   const currentPlayer =
     step < ranking.length - 1 ? ranking[ranking.length - 1 - step] : null;
 
   return (
     <>
-      {/* FOND + LUMIÈRES */}
+      {/* FOND */}
       <div
         style={{
           position: "fixed",
@@ -154,6 +168,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
           )}
         </div>
 
+        {/* CONTENU */}
         <div
           style={{
             flex: 1,
@@ -222,7 +237,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
             </div>
           )}
 
-          {/* WINNER FINAL */}
+          {/* GAGNANT */}
           {winnerPhase > 0 && winner && (
             <div
               style={{
