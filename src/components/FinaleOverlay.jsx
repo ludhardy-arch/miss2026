@@ -58,8 +58,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
     };
   }, [phase, step, ranking.length]);
 
-  // ----------- FIX ANTI-BOUCLE GAGNANT -------------
-  // 1) Passage au gagnant UNE FOIS
+  // -------- FIX ANTI-BOUCLE --------
   useEffect(() => {
     if (
       phase === "reveal" &&
@@ -71,7 +70,6 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
     }
   }, [phase, step, ranking.length, winnerPhase]);
 
-  // 2) Phases gagnant → ne dépend que de winnerPhase
   useEffect(() => {
     let timer;
     let conf;
@@ -92,7 +90,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
       if (conf) clearTimeout(conf);
     };
   }, [winnerPhase]);
-  // --------------------------------------------------
+  // ---------------------------------
 
   const quit = () =>
     confirm("Quitter le show ?") && updateFinaleStarted?.(false);
@@ -123,15 +121,16 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
         }}
       />
 
-      {/* CONTENEUR PRINCIPAL — FIX MOBILE AVEC 100dvh */}
+      {/* CONTENEUR PRINCIPAL MOBILE-FRIENDLY */}
       <div
         style={{
           position: "absolute",
           top: 0,
           left: 0,
           width: "100%",
-          height: "100dvh", // 🔥 corrige la visibilité sur smartphone
-          overflow: "hidden",
+          height: "100dvh",
+          overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
           zIndex: 10000,
           display: "flex",
           flexDirection: "column",
@@ -172,7 +171,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
           )}
         </div>
 
-        {/* CONTENU */}
+        {/* CONTENU CENTRAL */}
         <div
           style={{
             flex: 1,
@@ -180,7 +179,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
             flexDirection: "column",
             justifyContent: "center",
             padding: "20px",
-            overflow: "hidden",
+            overflow: "visible", // important pour mobile
           }}
         >
           {/* INTRO */}
@@ -292,14 +291,14 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
           )}
         </div>
 
-        {/* CLASSEMENT FINAL — FIX MOBILE */}
+        {/* CLASSEMENT FINAL MOBILE-FRIENDLY */}
         {winnerPhase === 3 && (
           <div
             style={{
               background: "rgba(0,0,0,0.85)",
               padding: "25px 20px",
               borderRadius: "20px 20px 0 0",
-              maxHeight: "40dvh", // 🔥 lisible sur smartphone
+              maxHeight: "40dvh",
               overflowY: "auto",
             }}
           >
