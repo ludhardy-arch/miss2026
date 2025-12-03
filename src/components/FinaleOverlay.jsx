@@ -187,7 +187,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
                   style={{ fontSize: "2.8rem", margin: "2rem 0", color: "#ffd700" }}
                 >
                   Mais pour nous<br />
-                  QUI A GAGNÉ ?
+                  QUI AURA LA COURONNE ?
                 </div>
               )}
               {introStep >= 2 && (
@@ -199,7 +199,7 @@ export default function FinalShow({ players, adminSelections, isAdmin }) {
                     textShadow: "0 0 40px #ffd700",
                   }}
                 >
-                  {countdown > 0 ? countdown : "GO !"}
+                  {countdown > 0 ? countdown : "RESULTATS OFFICIELS !"}
                 </div>
               )}
             </div>
