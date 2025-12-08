@@ -5,6 +5,7 @@ import { AppContext } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import Leaderboard from "../components/Leaderboard";
 import ChatBubble from "../components/ChatBubble";
+import SelectionBubble from "../components/SelectionBubble";
 import { CANDIDATES } from "../data/candidates";
 
 // Animation douce pour "VOTES OUVERTS !!!"
@@ -28,13 +29,12 @@ export default function Player({ user }) {
 
   const navigate = useNavigate();
 
-  // ⭐ Déconnexion (en bas de page)
+  // ⭐ Déconnexion en bas de page
   const handleLogout = () => {
     if (!window.confirm("Voulez-vous vraiment vous déconnecter ?")) return;
 
     localStorage.removeItem("miss_user");
 
-    // Supprime les données locales du joueur
     Object.keys(localStorage).forEach((key) => {
       if (key.startsWith("miss2026_") && key.endsWith(`_${user.pseudo}`)) {
         localStorage.removeItem(key);
@@ -43,8 +43,6 @@ export default function Player({ user }) {
 
     navigate("/login", { replace: true });
   };
-
-  // ----------------------------------------------------------
 
   const [selection, setSelection] = useState([]);
   const [ranking, setRanking] = useState({});
@@ -219,7 +217,7 @@ export default function Player({ user }) {
     <div style={{ padding: 20, maxWidth: 1200, margin: "0 auto" }}>
       <style>{votePulseKeyframes}</style>
 
-      {/* ⭐ Bannière verte votes ouverts */}
+      {/* Bannière votes ouverts */}
       {votesOpen && showVoteBanner && (
         <div
           style={{
@@ -378,7 +376,6 @@ export default function Player({ user }) {
                   setRanking((prev) => {
                     const updated = { ...prev };
 
-                    // Libère l’ancien rang attribué
                     Object.keys(updated).forEach((mid) => {
                       if (updated[mid] === newRank) delete updated[mid];
                     });
@@ -421,13 +418,16 @@ export default function Player({ user }) {
         </button>
       </div>
 
-      {/* Classement / leaderboard */}
+      {/* Classement */}
       <Leaderboard />
 
       {/* Chat */}
       <ChatBubble user={user} />
 
-      {/* ⭐⭐⭐ Bouton Déconnexion en BAS */}
+      {/* ⭐⭐ Bulle bleue des sélections ⭐⭐ */}
+      <SelectionBubble user={user} tour={tour} selection={selection} />
+
+      {/* Déconnexion */}
       <div style={{ textAlign: "center", marginTop: 40 }}>
         <button
           onClick={handleLogout}
@@ -450,7 +450,6 @@ export default function Player({ user }) {
   );
 }
 
-function Legendary() {}
 function LegendItem({ colorClass, text }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
