@@ -8,25 +8,26 @@ const norm = (d) => {
 };
 
 /**
- * 🎯 NOUVEAU SYSTÈME DE POINTS (validé)
+ * 🎯 NOUVEAU SYSTÈME DE POINTS (MIS À JOUR)
  *
  * TOUR 1 :
- *    +5 points par bonne miss
+ *    +10 points par bonne miss
  *
  * TOUR 2 :
- *    VERT  = bonne T1 + bonne T2 = +10 pts
- *    JAUNE = bonne T2 seulement  = +5 pts
+ *    VERT  = bonne T1 + bonne T2 = +20 pts
+ *    JAUNE = bonne T2 seulement  = +10 pts
  *
  * FINALE (place admin) :
  *
- *         ┌───────────────┬───────────┬─────────┬───────────┐
- *         │   Couleur     │  Verte    │  Jaune  │  Neutre   │
- * ┌───────┼───────────────┼───────────┼─────────┼───────────┤
- * │ 1ère  │ Miss France   │   20 pts  │  10 pts │    5 pts  │
- * │ 2ème  │ 1ère dauph.   │   12 pts  │   6 pts │    4 pts  │
- * │ 3ème  │ 2ème dauph.   │   10 pts  │   5 pts │    3 pts  │
- * │ 4-5e  │ 3-4e dauph.   │    6 pts  │   3 pts │    2 pts  │
- * └───────┴───────────────┴───────────┴─────────┴───────────┘
+ *         ┌───────────────┬──────────────┬──────────────┬──────────────┐
+ *         │   Couleur     │    Verte     │    Jaune     │    Neutre    │
+ * ┌───────┼───────────────┼──────────────┼──────────────┼──────────────┤
+ * │ 1ère  │ Miss France   │    30 pts    │    15 pts    │     7 pts    │
+ * │ 2ème  │ 1ère dauph.   │    18 pts    │    10 pts    │     5 pts    │
+ * │ 3ème  │ 2ème dauph.   │    12 pts    │     8 pts    │     4 pts    │
+ * │ 4ème  │ 3ème dauph.   │    10 pts    │     5 pts    │     3 pts    │
+ * │ 5ème  │ 4ème dauph.   │     6 pts    │     3 pts    │     2 pts    │
+ * └───────┴───────────────┴──────────────┴──────────────┴──────────────┘
  */
 
 export function calculatePoints(playerVotes, adminSelections) {
@@ -42,47 +43,45 @@ export function calculatePoints(playerVotes, adminSelections) {
   let total = 0;
 
   // ----------------------------------------------------------
-  // 🔵 TOUR 1 — +5 pts par bonne miss
+  // 🔵 TOUR 1 — +10 pts par bonne miss
   // ----------------------------------------------------------
   t1P.forEach((miss) => {
-    if (t1A.includes(miss)) total += 5;
+    if (t1A.includes(miss)) total += 10;
   });
 
   // ----------------------------------------------------------
-  // 🟩 TOUR 2 — +10 pts (verte) / +5 pts (jaune)
+  // 🟩 TOUR 2 — +20 pts (verte) / +10 pts (jaune)
   // ----------------------------------------------------------
   t2P.forEach((miss) => {
-    if (!t2A.includes(miss)) return; // mauvaise au T2 → 0
+    if (!t2A.includes(miss)) return; // mauvaise au T2
 
-    const isGreen = t1P.includes(miss) && t1A.includes(miss); // bonne T1 + T2
+    const isGreen = t1P.includes(miss) && t1A.includes(miss);
 
-    if (isGreen) total += 10;
-    else total += 5; // jaune
+    if (isGreen) total += 20;
+    else total += 10;
   });
 
   // ----------------------------------------------------------
   // 🟪 FINALE — comparaison rang par rang
   // ----------------------------------------------------------
   if (t3P.length === 5 && t3A.length === 5) {
+    const pointsTable = {
+      1: { green: 30, yellow: 15, neutral: 7 },
+      2: { green: 18, yellow: 10, neutral: 5 },
+      3: { green: 12, yellow: 8, neutral: 4 },
+      4: { green: 10, yellow: 5, neutral: 3 },
+      5: { green: 6, yellow: 3, neutral: 2 },
+    };
+
     t3P.forEach((miss, index) => {
       const adminRank = t3A.indexOf(miss) + 1;
-
-      if (adminRank <= 0) return; // pas dans le top 5 admin
+      if (adminRank <= 0) return;
 
       const green = t1P.includes(miss) && t1A.includes(miss);
-      const yellow = t2P.includes(miss) && t2A.includes(miss) && !green;
+      const yellow =
+        t2P.includes(miss) && t2A.includes(miss) && !green;
 
-      // Détermine la couleur
       const color = green ? "green" : yellow ? "yellow" : "neutral";
-
-      // Points selon la place
-      const pointsTable = {
-        1: { green: 20, yellow: 10, neutral: 5 },
-        2: { green: 12, yellow: 6, neutral: 4 },
-        3: { green: 10, yellow: 5, neutral: 3 },
-        4: { green: 6, yellow: 3, neutral: 2 },
-        5: { green: 6, yellow: 3, neutral: 2 },
-      };
 
       total += pointsTable[adminRank][color];
     });
