@@ -7,7 +7,6 @@ import FinaleOverlay from "../components/FinaleOverlay";
 import ChatBubble from "../components/ChatBubble";
 import { CANDIDATES } from "../data/candidates";
 
-// Animation douce pour "VOTES OUVERTS !!!"
 const votePulseKeyframes = `
 @keyframes votePulse {
   0% { transform: scale(1); box-shadow: 0 0 10px rgba(0,255,120,0.6); }
@@ -33,7 +32,6 @@ export default function Admin({ user }) {
   const [selection, setSelection] = useState([]);
   const [ranking, setRanking] = useState({});
 
-  // Charger sélection / classement existant depuis adminSelections
   useEffect(() => {
     const current = adminSelections[`tour${tour}`];
 
@@ -48,7 +46,6 @@ export default function Admin({ user }) {
     }
   }, [tour, adminSelections]);
 
-  // IDs candidates
   const candidateIds =
     tour === 1
       ? CANDIDATES.map((m) => m.id)
@@ -60,7 +57,8 @@ export default function Admin({ user }) {
     .map((id) => CANDIDATES.find((m) => m.id === id))
     .filter(Boolean);
 
-  const maxSelect = tour === 1 ? 15 : 5;
+  // ⭐ Tour 1 : 12 miss
+  const maxSelect = tour === 1 ? 12 : 5;
 
   const handleClickMiss = (id) => {
     if (tour === 3) return;
@@ -80,46 +78,28 @@ export default function Admin({ user }) {
     return "4ème dauphine";
   };
 
-  // Validation tour 1/2/3
   const handleValidate = () => {
     if (tour < 3) {
-      if (selection.length !== maxSelect) {
-        alert(`Vous devez sélectionner ${maxSelect} miss.`);
-        return;
-      }
+      if (selection.length !== maxSelect)
+        return alert(`Vous devez sélectionner ${maxSelect} miss.`);
 
-      if (
-        !window.confirm(
-          `Confirmer la sélection du tour ${tour} ? Cette action est définitive.`
-        )
-      )
-        return;
+      if (!window.confirm(`Valider le tour ${tour} ?`)) return;
 
       updateAdminSelections(tour, selection);
-      alert("Tour validé !");
       updateTour(tour + 1);
       return;
     }
 
     // Tour 3
     const ranks = Object.values(ranking).filter(Boolean);
-    if (ranks.length !== 5) {
-      alert("Classez les 5 miss de la 1ère à la 5ème place.");
-      return;
-    }
+    if (ranks.length !== 5)
+      return alert("Classez les 5 miss de la 1ère à la 5ème place.");
 
     const needed = [1, 2, 3, 4, 5];
-    if (!needed.every((r) => ranks.includes(r))) {
-      alert("Chaque place doit être utilisée une seule fois.");
-      return;
-    }
+    if (!needed.every((r) => ranks.includes(r)))
+      return alert("Chaque place doit être unique.");
 
-    if (
-      !window.confirm(
-        "Confirmer le classement final ? Cette action est définitive."
-      )
-    )
-      return;
+    if (!window.confirm("Confirmer le classement final ?")) return;
 
     const ordered = [];
     for (let r = 1; r <= 5; r++) {
@@ -128,7 +108,6 @@ export default function Admin({ user }) {
     }
 
     updateAdminSelections(3, ordered);
-    alert("Finale validée !");
   };
 
   const playerHasVoted = (p) => {
@@ -163,11 +142,9 @@ export default function Admin({ user }) {
             maxWidth: 500,
             padding: "10px 18px",
             borderRadius: 999,
-            background:
-              "linear-gradient(135deg, rgba(0,200,120,0.95), rgba(0,255,180,0.95))",
-            color: "#012",
-            fontWeight: "bold",
+            background: "linear-gradient(135deg, rgba(0,200,120,0.95), rgba(0,255,180,0.95))",
             textAlign: "center",
+            fontWeight: "bold",
             animation: "votePulse 1.6s infinite",
           }}
         >
@@ -175,14 +152,13 @@ export default function Admin({ user }) {
         </div>
       )}
 
-      {/* BARRE DE CONTRÔLES */}
+      {/* Contrôles */}
       <div
         style={{
           display: "flex",
           gap: 10,
           flexWrap: "wrap",
           justifyContent: "center",
-          marginBottom: 20,
         }}
       >
         <button onClick={() => updateVotesOpen(!votesOpen)}>
@@ -209,10 +185,10 @@ export default function Admin({ user }) {
         )}
       </div>
 
-      {/* LISTE DES JOUEURS */}
+      {/* Joueurs */}
       <div
         style={{
-          margin: "0 auto 20px",
+          margin: "20px auto",
           maxWidth: 500,
           padding: 15,
           borderRadius: 12,
@@ -231,12 +207,12 @@ export default function Admin({ user }) {
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  fontSize: 18,
                   padding: "4px 0",
+                  fontSize: 18,
                   borderBottom: "1px solid rgba(255,255,255,0.1)",
                 }}
               >
-                <span>{pseudo}</span>
+                {pseudo}
                 <span
                   style={{
                     width: 14,
@@ -252,13 +228,10 @@ export default function Admin({ user }) {
         </ul>
       </div>
 
-      {/* Sélection tours 1 & 2 */}
+      {/* Sélection tour 1 & 2 */}
       {tour !== 3 && (
         <>
-          <h2>Tour {tour} — Sélection des miss</h2>
-          <p>
-            Sélectionnez <b>{maxSelect}</b> miss.
-          </p>
+          <h2>Tour {tour} — sélectionnez {maxSelect} miss</h2>
 
           <div className="grid">
             {candidates.map((miss) => (
@@ -323,28 +296,20 @@ export default function Admin({ user }) {
                     setRanking((prev) => {
                       const updated = { ...prev };
                       delete updated[miss.id];
+
                       Object.keys(updated).forEach((mid) => {
                         if (updated[mid] === newRank) delete updated[mid];
                       });
+
                       updated[miss.id] = newRank;
                       return updated;
                     });
                   }}
-                  style={{
-                    width: "100%",
-                    padding: 8,
-                    borderRadius: 8,
-                  }}
+                  style={{ width: "100%", padding: 8, borderRadius: 8 }}
                 >
                   <option value="">— Choisir —</option>
                   {[1, 2, 3, 4, 5].map((r) => (
-                    <option
-                      key={r}
-                      value={r}
-                      disabled={
-                        usedRanks.includes(r) && ranking[miss.id] !== r
-                      }
-                    >
+                    <option key={r} value={r}>
                       {getRankLabel(r)}
                     </option>
                   ))}
@@ -364,7 +329,6 @@ export default function Admin({ user }) {
 
       <Leaderboard />
 
-      {/* ⭐⭐ BULLE DE CHAT ⭐⭐ */}
       <ChatBubble user={user} />
     </div>
   );
