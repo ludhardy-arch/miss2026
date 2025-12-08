@@ -40,34 +40,31 @@ function RouterContent() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ⭐ 1. Sauvegarde du user (et suppression si déconnexion)
+  // ⭐ Sauvegarde automatique du user
   useEffect(() => {
     if (user) localStorage.setItem("miss_user", JSON.stringify(user));
     else localStorage.removeItem("miss_user");
   }, [user]);
 
-  // ⭐ 2. Reconnexion automatique
+  // ⭐ Reconnexion auto
   useEffect(() => {
-    const saved = localStorage.getItem("miss_user");
-    if (saved && !user) {
-      try {
-        const u = JSON.parse(saved);
-        setUser(u);
-      } catch {}
+    if (!user) {
+      const saved = localStorage.getItem("miss_user");
+      if (saved) {
+        setUser(JSON.parse(saved));
+      }
     }
   }, []);
 
-  // ⭐ 3. Redirection automatique si refresh ou démarrage
+  // ⭐ Redirection selon le rôle
   useEffect(() => {
     if (!user) return;
 
-    // ADMIN
     if (user.role === "admin" && location.pathname !== "/admin") {
       navigate("/admin", { replace: true });
       return;
     }
 
-    // PLAYER
     if (user.role === "player" && location.pathname !== "/player") {
       navigate("/player", { replace: true });
       return;
@@ -79,7 +76,7 @@ function RouterContent() {
 
   return (
     <>
-      {/* ⭐ Show final toujours visible sauf sur login ⭐ */}
+      {/* SUPERPOSITION FINALE */}
       {shouldShowFinale && (
         <FinaleOverlay
           players={players}
@@ -89,13 +86,10 @@ function RouterContent() {
       )}
 
       <Routes>
-        {/* Page racine → Login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* LOGIN */}
         <Route path="/login" element={<Login setUser={setUser} />} />
 
-        {/* ADMIN */}
         <Route
           path="/admin"
           element={
@@ -107,7 +101,6 @@ function RouterContent() {
           }
         />
 
-        {/* PLAYER */}
         <Route
           path="/player"
           element={
@@ -119,7 +112,6 @@ function RouterContent() {
           }
         />
 
-        {/* PAGE D'ATTENTE */}
         <Route
           path="/waiting"
           element={
@@ -127,7 +119,6 @@ function RouterContent() {
           }
         />
 
-        {/* Toute autre URL → login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </>
