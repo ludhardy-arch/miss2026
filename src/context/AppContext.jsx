@@ -13,10 +13,13 @@ export function AppProvider({ children }) {
     tour2: [],
     tour3: [],
   });
+
   const [votesOpen, setVotesOpen] = useState(false);
   const [tour, setTour] = useState(1);
   const [finaleStarted, setFinaleStarted] = useState(false);
-  const [gameId, setGameId] = useState(null); // 🔥 identifiant de partie
+
+  // IMPORTANT : valeur initiale "loading" pour éviter le bug de login
+  const [gameId, setGameId] = useState("loading");
 
   const roomRef = ref(database, "rooms/miss2026");
 
@@ -29,7 +32,7 @@ export function AppProvider({ children }) {
       (snap) => {
         if (snap.exists()) return;
 
-        const initialGameId = Date.now().toString();
+        const newGameId = Date.now().toString();
 
         set(roomRef, {
           players: {},
@@ -37,7 +40,7 @@ export function AppProvider({ children }) {
           votesOpen: false,
           tour: 1,
           finaleStarted: false,
-          gameId: initialGameId,
+          gameId: newGameId,
         });
       },
       { onlyOnce: true }
@@ -86,7 +89,7 @@ export function AppProvider({ children }) {
       setFinaleStarted(Boolean(snap.val()))
     );
     const unsubG = onValue(gameIdRef, (snap) =>
-      setGameId(snap.val() || null)
+      setGameId(snap.val() || "loading")
     );
 
     return () => {
@@ -101,7 +104,6 @@ export function AppProvider({ children }) {
   // FUNCTIONS
   // -----------------------------------------
 
-  // Ajout / connexion joueur
   const addPlayer = (pseudo) => {
     if (!pseudo) return;
 
@@ -111,7 +113,6 @@ export function AppProvider({ children }) {
     });
   };
 
-  // Enregistrer vote validé
   const updatePlayerVote = (pseudo, tourNum, selection) => {
     set(
       ref(database, `rooms/miss2026/players/${pseudo}/tour${tourNum}`),
@@ -174,4 +175,3 @@ export function AppProvider({ children }) {
     </AppContext.Provider>
   );
 }
-
