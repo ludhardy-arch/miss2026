@@ -8,7 +8,7 @@ export default function Login({ setUser }) {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  // 🔥 Supprime TOUTES les données locales (tous gameId confondus)
+  // 🔥 Supprime TOUTES les anciennes données locales du joueur, tous gameId confondus
   const cleanLocalData = (pseudo) => {
     localStorage.removeItem("miss_user");
 
@@ -76,7 +76,6 @@ export default function Login({ setUser }) {
         Qui aura le meilleur pronostic ?
       </p>
 
-      {/* ⭐ RÈGLES DU JEU ⭐ */}
       <p
         style={{
           fontSize: 16,
@@ -92,7 +91,7 @@ export default function Login({ setUser }) {
       >
         ⚠️ <b style={{ color: "#d20055" }}>Important :</b>
         <br />
-        Attendez que <b>les votes soient ouverts</b> pour jouer.
+        Attendez que <b>les votes soient ouverts</b>.
         <br />
         Fermeture des votes en même temps qu'à la télé 📺✨
         <br />
