@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useContext } from "react";
 import {
-  BrowserRouter as Router,
+  HashRouter as Router,   // ⭐ LA LIGNE IMPORTANTE
   Routes,
   Route,
   Navigate,
@@ -40,23 +40,18 @@ function RouterContent() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ⭐ Sauvegarde automatique du user
   useEffect(() => {
     if (user) localStorage.setItem("miss_user", JSON.stringify(user));
     else localStorage.removeItem("miss_user");
   }, [user]);
 
-  // ⭐ Reconnexion auto
   useEffect(() => {
     if (!user) {
       const saved = localStorage.getItem("miss_user");
-      if (saved) {
-        setUser(JSON.parse(saved));
-      }
+      if (saved) setUser(JSON.parse(saved));
     }
   }, []);
 
-  // ⭐ Redirection selon le rôle
   useEffect(() => {
     if (!user) return;
 
@@ -76,7 +71,6 @@ function RouterContent() {
 
   return (
     <>
-      {/* SUPERPOSITION FINALE */}
       {shouldShowFinale && (
         <FinaleOverlay
           players={players}
