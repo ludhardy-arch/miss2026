@@ -4,10 +4,10 @@ import React, { useContext, useState, useEffect } from "react";
 import { AppContext } from "../context/AppContext";
 import Leaderboard from "../components/Leaderboard";
 import FinaleOverlay from "../components/FinaleOverlay";
-import ChatBubble from "../components/ChatBubble"; // ⭐ AJOUT ICI ⭐
+import ChatBubble from "../components/ChatBubble";
 import { CANDIDATES } from "../data/candidates";
 
-// Petite animation douce pour "VOTES OUVERTS !!!"
+// Animation douce pour "VOTES OUVERTS !!!"
 const votePulseKeyframes = `
 @keyframes votePulse {
   0% { transform: scale(1); box-shadow: 0 0 10px rgba(0,255,120,0.6); }
@@ -30,10 +30,10 @@ export default function Admin({ user }) {
     updateFinaleStarted,
   } = useContext(AppContext);
 
-  const [selection, setSelection] = useState([]);   
-  const [ranking, setRanking] = useState({});       
+  const [selection, setSelection] = useState([]);
+  const [ranking, setRanking] = useState({});
 
-  // Charger sélection / classement existant
+  // Charger sélection / classement existant depuis adminSelections
   useEffect(() => {
     const current = adminSelections[`tour${tour}`];
 
@@ -41,8 +41,10 @@ export default function Admin({ user }) {
       const obj = {};
       current.forEach((missId, index) => (obj[missId] = index + 1));
       setRanking(obj);
+      setSelection([]);
     } else {
       setSelection(current || []);
+      setRanking({});
     }
   }, [tour, adminSelections]);
 
@@ -90,7 +92,8 @@ export default function Admin({ user }) {
         !window.confirm(
           `Confirmer la sélection du tour ${tour} ? Cette action est définitive.`
         )
-      ) return;
+      )
+        return;
 
       updateAdminSelections(tour, selection);
       alert("Tour validé !");
@@ -111,7 +114,12 @@ export default function Admin({ user }) {
       return;
     }
 
-    if (!window.confirm("Confirmer le classement final ? Cette action est définitive.")) return;
+    if (
+      !window.confirm(
+        "Confirmer le classement final ? Cette action est définitive."
+      )
+    )
+      return;
 
     const ordered = [];
     for (let r = 1; r <= 5; r++) {
@@ -155,7 +163,8 @@ export default function Admin({ user }) {
             maxWidth: 500,
             padding: "10px 18px",
             borderRadius: 999,
-            background: "linear-gradient(135deg, rgba(0,200,120,0.95), rgba(0,255,180,0.95))",
+            background:
+              "linear-gradient(135deg, rgba(0,200,120,0.95), rgba(0,255,180,0.95))",
             color: "#012",
             fontWeight: "bold",
             textAlign: "center",
@@ -180,7 +189,10 @@ export default function Admin({ user }) {
           {votesOpen ? "Fermer les votes" : "Ouvrir les votes"}
         </button>
 
-        <button onClick={resetGame} style={{ background: "crimson", color: "white" }}>
+        <button
+          onClick={resetGame}
+          style={{ background: "crimson", color: "white" }}
+        >
           RESET
         </button>
 
@@ -244,7 +256,9 @@ export default function Admin({ user }) {
       {tour !== 3 && (
         <>
           <h2>Tour {tour} — Sélection des miss</h2>
-          <p>Sélectionnez <b>{maxSelect}</b> miss.</p>
+          <p>
+            Sélectionnez <b>{maxSelect}</b> miss.
+          </p>
 
           <div className="grid">
             {candidates.map((miss) => (
@@ -327,7 +341,9 @@ export default function Admin({ user }) {
                     <option
                       key={r}
                       value={r}
-                      disabled={usedRanks.includes(r) && ranking[miss.id] !== r}
+                      disabled={
+                        usedRanks.includes(r) && ranking[miss.id] !== r
+                      }
                     >
                       {getRankLabel(r)}
                     </option>
@@ -349,7 +365,7 @@ export default function Admin({ user }) {
       <Leaderboard />
 
       {/* ⭐⭐ BULLE DE CHAT ⭐⭐ */}
-      <ChatBubble user={user} /> 
+      <ChatBubble user={user} />
     </div>
   );
 }
