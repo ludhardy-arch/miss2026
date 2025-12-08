@@ -96,7 +96,7 @@ export default function Login({ setUser }) {
         Fermeture des votes en même temps qu'à la télé 📺✨
         <br />
         <br />
-        🟣 Tour 1 : sélectionner <b>15 miss</b>
+        🟣 Tour 1 : sélectionner <b>12 miss</b>
         <br />
         🔵 Tour 2 : sélectionner <b>5 miss</b>
         <br />
