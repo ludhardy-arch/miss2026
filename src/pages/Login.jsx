@@ -37,11 +37,11 @@ export default function Login({ setUser }) {
       resetPlayerVotes(p);
       cleanLocalData(p);
 
+      addPlayer(p);
+
       const userObj = { pseudo: p, role: "player" };
       setUser(userObj);
       localStorage.setItem("miss_user", JSON.stringify(userObj));
-
-      addPlayer(p);
       navigate("/player");
       return;
     }
@@ -68,14 +68,14 @@ export default function Login({ setUser }) {
           fontWeight: "bold",
         }}
       >
-        🎉 Bienvenue sur Miss 2026 !!! 🎉
+        🎉 Bienvenue sur Miss2026 !!! 🎉
       </h1>
 
       <p style={{ fontSize: 20, fontWeight: "bold", marginBottom: 20 }}>
         Qui aura le meilleur pronostic ?
       </p>
 
-      {/* ⭐ INSTRUCTIONS OFFICIELLES ⭐ */}
+      {/* ⭐ INSTRUCTIONS MISES À JOUR (12 MISS AU TOUR 1) ⭐ */}
       <p
         style={{
           fontSize: 16,
@@ -90,15 +90,12 @@ export default function Login({ setUser }) {
         }}
       >
         ⚠️ <b style={{ color: "#d20055" }}>Important :</b><br />
-        Bien attendre que <b>les votes soient ouverts</b> pour sélectionner vos miss.
-        <br />
+        Bien attendre que <b>les votes soient ouverts</b> pour sélectionner vos miss.<br />
         La fermeture des votes à chaque tour sera effectuée <b>en même temps qu'à la télé</b> 📺✨
         <br /><br />
 
-        🟣 <b>Premier tour :</b> sélectionner <b>12 miss</b>
-        <br />
-        🔵 <b>Deuxième tour :</b> sélectionner <b>5 miss</b>
-        <br />
+        🟣 <b>Premier tour :</b> sélectionner <b>12 miss</b><br />
+        🔵 <b>Deuxième tour :</b> sélectionner <b>5 miss</b><br />
         🟡 <b>Troisième tour :</b> classer <b>les 5 finalistes</b>
         <br /><br />
 
