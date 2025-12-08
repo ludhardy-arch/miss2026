@@ -7,7 +7,7 @@ import Leaderboard from "../components/Leaderboard";
 import ChatBubble from "../components/ChatBubble";
 import { CANDIDATES } from "../data/candidates";
 
-// Animation douce bannière votes ouverts
+// Animation douce pour "VOTES OUVERTS !!!"
 const votePulseKeyframes = `
 @keyframes votePulse {
   0% { transform: scale(1); box-shadow: 0 0 10px rgba(0,255,120,0.6); }
@@ -24,21 +24,24 @@ export default function Player({ user }) {
     updatePlayerVote,
     addPlayer,
     players,
+    gameId,
   } = useContext(AppContext);
 
   const navigate = useNavigate();
-
   const [selection, setSelection] = useState([]);
   const [ranking, setRanking] = useState({});
   const [showVoteBanner, setShowVoteBanner] = useState(true);
 
-  // réaffiche la bannière à chaque tour
-  useEffect(() => setShowVoteBanner(true), [tour]);
+  // Bannière réapparaît à chaque tour
+  useEffect(() => {
+    setShowVoteBanner(true);
+  }, [tour]);
 
-  // enregistre joueur dans Firebase
-  useEffect(() => addPlayer(user.pseudo), [user.pseudo]);
+  // Enregistrer le joueur
+  useEffect(() => {
+    addPlayer(user.pseudo);
+  }, [user.pseudo, addPlayer]);
 
-  // données joueu
   const playerData = players[user.pseudo] || {};
   const currentKey = `tour${tour}`;
   const hasVotedThisTour =
@@ -47,7 +50,7 @@ export default function Player({ user }) {
 
   const maxSelect = tour === 1 ? 15 : tour === 2 ? 5 : 5;
 
-  // liste candidates selon le tour
+  // Candidates selon tour
   const candidateIds =
     tour === 1
       ? CANDIDATES.map((c) => c.id)
@@ -59,25 +62,31 @@ export default function Player({ user }) {
     .map((id) => CANDIDATES.find((c) => c.id === id))
     .filter(Boolean);
 
-  // si déjà voté → go waiting
+  // Si déjà voté → page attente
   useEffect(() => {
     if (hasVotedThisTour) navigate("/waiting");
   }, [hasVotedThisTour, navigate]);
 
+  // Helpers de clé localStorage suivant gameId
+  const lsKeySelection = (tourNum) =>
+    `miss2026_${gameId || "nogame"}_selection_tour${tourNum}_${user.pseudo}`;
+  const lsKeyRanking = () =>
+    `miss2026_${gameId || "nogame"}_ranking_tour3_${user.pseudo}`;
+
   // -----------------------------
-  // CHARGEMENT DES VOTES
-  // Firebase > localStorage
+  // CHARGEMENT VOTES : Firebase > localStorage
   // -----------------------------
   useEffect(() => {
+    if (!gameId) return; // attendre la synchro
     if (hasVotedThisTour) return;
 
     const dbVote = playerData[currentKey];
 
-    // 🔥 Firebase PRIORITAIRE
+    // 🔥 Firebase prioritaire
     if (dbVote && dbVote.length > 0) {
       if (tour === 3) {
         const obj = {};
-        dbVote.forEach((id, i) => (obj[id] = i + 1)); // classements
+        dbVote.forEach((id, i) => (obj[id] = i + 1));
         setRanking(obj);
       } else {
         setSelection(dbVote);
@@ -85,45 +94,33 @@ export default function Player({ user }) {
       return;
     }
 
-    // fallback localStorage
+    // Fallback localStorage (pour sélection en cours)
     if (tour === 3) {
-      const saved = localStorage.getItem(
-        `miss2026_ranking_tour3_${user.pseudo}`
-      );
+      const saved = localStorage.getItem(lsKeyRanking());
       setRanking(saved ? JSON.parse(saved) : {});
     } else {
-      const saved = localStorage.getItem(
-        `miss2026_selection_tour${tour}_${user.pseudo}`
-      );
+      const saved = localStorage.getItem(lsKeySelection(tour));
       setSelection(saved ? JSON.parse(saved) : []);
     }
-  }, [tour, playerData, hasVotedThisTour, user.pseudo]);
+  }, [tour, playerData, hasVotedThisTour, user.pseudo, gameId, currentKey]);
 
-  // -----------------------------
-  // SAUVEGARDE LOCALE (tour 1 & 2)
-  // -----------------------------
+  // Sauvegarde locale selection (tour 1 & 2)
   useEffect(() => {
+    if (!gameId) return;
     if (hasVotedThisTour || tour === 3) return;
-    localStorage.setItem(
-      `miss2026_selection_tour${tour}_${user.pseudo}`,
-      JSON.stringify(selection)
-    );
-  }, [selection, tour, hasVotedThisTour, user.pseudo]);
 
-  // -----------------------------
-  // SAUVEGARDE LOCALE (tour 3)
-  // -----------------------------
+    localStorage.setItem(lsKeySelection(tour), JSON.stringify(selection));
+  }, [selection, tour, hasVotedThisTour, user.pseudo, gameId]);
+
+  // Sauvegarde locale ranking (tour 3)
   useEffect(() => {
+    if (!gameId) return;
     if (hasVotedThisTour || tour !== 3) return;
-    localStorage.setItem(
-      `miss2026_ranking_tour3_${user.pseudo}`,
-      JSON.stringify(ranking)
-    );
-  }, [ranking, tour, hasVotedThisTour, user.pseudo]);
 
-  // -----------------------------
-  // CLIC MISS (tour 1 & 2)
-  // -----------------------------
+    localStorage.setItem(lsKeyRanking(), JSON.stringify(ranking));
+  }, [ranking, tour, hasVotedThisTour, user.pseudo, gameId]);
+
+  // Sélection tour 1 & 2
   const handleClickMiss = (id) => {
     if (tour === 3 || !votesOpen || hasVotedThisTour) return;
 
@@ -134,57 +131,77 @@ export default function Player({ user }) {
     }
   };
 
-  // label classement finale
-  const getRankLabel = (rank) =>
-    ["", "Miss France", "1ère dauphine", "2ème dauphine", "3ème dauphine", "4ème dauphine"][rank];
+  const getRankLabel = (rank) => {
+    if (rank === 1) return "Miss France";
+    if (rank === 2) return "1ère dauphine";
+    if (rank === 3) return "2ème dauphine";
+    if (rank === 4) return "3ème dauphine";
+    return "4ème dauphine";
+  };
 
-  // -----------------------------
-  // VALIDATION VOTE
-  // -----------------------------
+  // Validation vote
   const handleValidate = () => {
-    if (!votesOpen) return alert("Les votes ne sont pas ouverts.");
+    if (!votesOpen) {
+      alert("Les votes ne sont pas ouverts.");
+      return;
+    }
 
     if (tour === 1 || tour === 2) {
-      if (selection.length !== maxSelect)
-        return alert(`Tu dois sélectionner ${maxSelect} miss.`);
-      if (!window.confirm("Envoyer ton vote ?")) return;
+      if (selection.length !== maxSelect) {
+        alert(`Tu dois sélectionner ${maxSelect} miss.`);
+        return;
+      }
+
+      if (!window.confirm("Envoyer ton vote ? Tu ne pourras plus le modifier."))
+        return;
 
       updatePlayerVote(user.pseudo, tour, selection);
+      alert("Vote enregistré !");
       navigate("/waiting");
       return;
     }
 
+    // Finale
     if (tour === 3) {
       const ranks = Object.values(ranking).filter(Boolean);
       const nb = candidates.length;
-      if (ranks.length !== nb)
-        return alert("Tu dois classer toutes les finalistes.");
 
-      if (!window.confirm("Envoyer ton classement ?")) return;
+      if (ranks.length !== nb) {
+        alert("Tu dois classer toutes les finalistes.");
+        return;
+      }
+
+      const needed = Array.from({ length: nb }, (_, i) => i + 1);
+      if (!needed.every((r) => ranks.includes(r))) {
+        alert("Chaque place doit être utilisée une seule fois.");
+        return;
+      }
+
+      if (!window.confirm("Envoyer ton classement final ?")) return;
 
       const ordered = [];
       for (let r = 1; r <= nb; r++) {
-        const entry = Object.entries(ranking).find(([, rk]) => rk === r);
+        const entry = Object.entries(ranking).find(([, rank]) => rank === r);
         if (entry) ordered.push(Number(entry[0]));
       }
 
       updatePlayerVote(user.pseudo, 3, ordered);
+      alert("Classement final enregistré !");
       navigate("/waiting");
     }
   };
 
-  const usedRanks = Object.values(ranking).filter(Boolean);
-
-  // --------------------------------
-  // COULEURS DES CADRES
-  // --------------------------------
+  // Couleurs cadres
   const getBorderColor = (id) => {
     const t1P = playerData.tour1 || [];
     const t2P = playerData.tour2 || [];
     const t1A = adminSelections.tour1 || [];
     const t2A = adminSelections.tour2 || [];
 
-    if (tour !== 3 && !hasVotedThisTour && selection.includes(id)) return "blue";
+    if (tour !== 3 && !hasVotedThisTour && selection.includes(id)) {
+      return "blue";
+    }
+
     if (t1P.includes(id) && t1A.includes(id)) return "green";
     if (tour >= 2 && t2P.includes(id) && t2A.includes(id)) return "gold";
     return "grey";
@@ -192,30 +209,24 @@ export default function Player({ user }) {
 
   const getBorderClass = (id) => {
     const c = getBorderColor(id);
-    return {
-      blue: "border-blue",
-      green: "border-green",
-      gold: "border-yellow",
-      grey: "border-grey",
-    }[c];
+    if (c === "blue") return "border-blue";
+    if (c === "green") return "border-green";
+    if (c === "gold") return "border-yellow";
+    return "border-grey";
   };
 
-  // sous-titre
-  const subtitle =
-    tour === 1
-      ? `Tour 1 — sélectionne ${maxSelect} miss`
-      : tour === 2
-      ? `Tour 2 — sélectionne ${maxSelect} miss`
-      : "Tour 3 — classe les finalistes";
+  const usedRanks = Object.values(ranking).filter(Boolean);
 
-  // -----------------------------
-  // RENDU
-  // -----------------------------
+  let subtitle = "";
+  if (tour === 1) subtitle = `Tour 1 — sélectionne ${maxSelect} miss`;
+  else if (tour === 2) subtitle = `Tour 2 — sélectionne ${maxSelect} miss`;
+  else subtitle = "Tour 3 — classe les finalistes";
+
   return (
     <div style={{ padding: 20, maxWidth: 1200, margin: "0 auto" }}>
       <style>{votePulseKeyframes}</style>
 
-      {/* Bannière VOTES OUVERTS */}
+      {/* ⭐ BANNIÈRE VERTE FIXE ⭐ */}
       {votesOpen && showVoteBanner && (
         <div
           style={{
@@ -230,11 +241,16 @@ export default function Player({ user }) {
             textAlign: "center",
             fontSize: 18,
             zIndex: 9999,
+            boxShadow: "0 6px 14px rgba(0,0,0,0.3)",
             animation: "votePulse 2s infinite",
           }}
         >
-          📢 <b>Les votes sont ouverts !!!</b>
-          <br />
+          <div>
+            📢 <b>Les votes sont ouverts !!!</b>
+            <br />
+            Le temps limite pour valider votre vote est le même qu'à la télé.
+          </div>
+
           <button
             onClick={() => setShowVoteBanner(false)}
             style={{
@@ -245,6 +261,8 @@ export default function Player({ user }) {
               padding: "6px 14px",
               borderRadius: 8,
               cursor: "pointer",
+              fontWeight: "bold",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
             }}
           >
             J’ai compris
@@ -255,7 +273,7 @@ export default function Player({ user }) {
       <h1>Bienvenue {user.pseudo}</h1>
       <p style={{ textAlign: "center" }}>{subtitle}</p>
 
-      {/* VOTES FERMÉS */}
+      {/* BANNIÈRE VOTES FERMÉS */}
       {!votesOpen && (
         <div
           style={{
@@ -268,16 +286,38 @@ export default function Player({ user }) {
             textAlign: "center",
             fontWeight: "bold",
             fontSize: 18,
+            boxShadow: "0 0 18px rgba(255,0,0,0.7)",
           }}
         >
-          LES VOTES SONT FERMÉS
+          <div>LES VOTES SONT FERMÉS</div>
+          <div style={{ fontSize: 15, marginTop: 4 }}>
+            Patientez que Ludo ouvre les votes.
+          </div>
         </div>
       )}
 
       {/* LÉGENDE */}
-      <Legend />
+      <div
+        style={{
+          margin: "20px auto",
+          padding: 15,
+          borderRadius: 10,
+          background: "rgba(0,0,0,0.45)",
+          maxWidth: 600,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+        }}
+      >
+        <h3 style={{ marginTop: 0 }}>Légende :</h3>
 
-      {/* LISTE CANDIDATES TOURS 1 & 2 */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <LegendItem colorClass="border-blue" text="Sélection en cours" />
+          <LegendItem colorClass="border-green" text="Bonne au tour 1" />
+          <LegendItem colorClass="border-yellow" text="Bonne au tour 2" />
+          <LegendItem colorClass="border-grey" text="Jamais sélectionnée" />
+        </div>
+      </div>
+
+      {/* TOURS 1 & 2 */}
       {tour !== 3 && (
         <div className="grid">
           {candidates.map((miss) => (
@@ -300,7 +340,10 @@ export default function Player({ user }) {
                 alt={miss.label}
                 style={{
                   width: "100%",
+                  height: "auto",
                   borderRadius: 10,
+                  marginBottom: 4,
+                  objectFit: "cover",
                 }}
               />
               <div>{miss.label}</div>
@@ -316,14 +359,21 @@ export default function Player({ user }) {
             <div
               key={miss.id}
               className={`miss-card ${getBorderClass(miss.id)}`}
-              style={{ textAlign: "center", borderWidth: 5 }}
+              style={{
+                textAlign: "center",
+                borderWidth: 5,
+                boxShadow: "0 0 14px rgba(0,0,0,0.6)",
+              }}
             >
               <img
                 src={miss.image}
                 alt={miss.label}
                 style={{
                   width: "100%",
+                  height: "auto",
                   borderRadius: 10,
+                  marginBottom: 8,
+                  objectFit: "cover",
                 }}
               />
               <div style={{ marginBottom: 8 }}>{miss.label}</div>
@@ -334,18 +384,21 @@ export default function Player({ user }) {
                   const newRank = Number(e.target.value);
                   setRanking((prev) => {
                     const updated = { ...prev };
-
                     delete updated[miss.id];
                     Object.keys(updated).forEach((mid) => {
                       if (updated[mid] === newRank) delete updated[mid];
                     });
-
                     updated[miss.id] = newRank;
                     return updated;
                   });
                 }}
                 disabled={hasVotedThisTour || !votesOpen}
-                style={{ width: "100%", padding: 6, borderRadius: 6 }}
+                style={{
+                  width: "100%",
+                  padding: 6,
+                  borderRadius: 6,
+                  fontSize: 14,
+                }}
               >
                 <option value="">— Choisir un rang —</option>
                 {[1, 2, 3, 4, 5].map((r) => (
@@ -363,39 +416,20 @@ export default function Player({ user }) {
         </div>
       )}
 
-      {/* Validation */}
+      {/* VALIDATION */}
       <div style={{ textAlign: "center", marginTop: 20 }}>
-        <button onClick={handleValidate} disabled={!votesOpen || hasVotedThisTour}>
+        <button
+          onClick={handleValidate}
+          disabled={!votesOpen || hasVotedThisTour}
+        >
           {tour === 3 ? "Valider mon classement" : "Valider mon vote"}
         </button>
       </div>
 
       <Leaderboard />
+
+      {/* ⭐⭐ BULLE DE CHAT ⭐⭐ */}
       <ChatBubble user={user} />
-    </div>
-  );
-}
-
-// --------------------------------------------
-// LÉGENDE
-// --------------------------------------------
-function Legend() {
-  return (
-    <div
-      style={{
-        margin: "20px auto",
-        padding: 15,
-        borderRadius: 10,
-        background: "rgba(0,0,0,0.45)",
-        maxWidth: 600,
-      }}
-    >
-      <h3 style={{ marginTop: 0 }}>Légende :</h3>
-
-      <LegendItem colorClass="border-blue" text="Sélection en cours" />
-      <LegendItem colorClass="border-green" text="Bonne au tour 1" />
-      <LegendItem colorClass="border-yellow" text="Bonne au tour 2" />
-      <LegendItem colorClass="border-grey" text="Jamais sélectionnée" />
     </div>
   );
 }
@@ -408,6 +442,8 @@ function LegendItem({ colorClass, text }) {
         style={{
           width: 40,
           height: 20,
+          padding: 0,
+          boxShadow: "none",
           borderWidth: 4,
         }}
       ></span>
@@ -415,4 +451,5 @@ function LegendItem({ colorClass, text }) {
     </div>
   );
 }
+
 
