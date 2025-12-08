@@ -2,7 +2,7 @@
 
 import React, { createContext, useEffect, useState } from "react";
 import { database } from "../firebase";
-import { ref, onValue, set, update } from "firebase/database";
+import { ref, onValue, set, update, remove } from "firebase/database";
 
 export const AppContext = createContext();
 
@@ -18,7 +18,7 @@ export function AppProvider({ children }) {
   const [tour, setTour] = useState(1);
   const [finaleStarted, setFinaleStarted] = useState(false);
 
-  // IMPORTANT : valeur initiale "loading" pour éviter le bug de login
+  // utilisé pour la reconnexion automatique
   const [gameId, setGameId] = useState("loading");
 
   const roomRef = ref(database, "rooms/miss2026");
@@ -62,11 +62,8 @@ export function AppProvider({ children }) {
   // -----------------------------------------
   useEffect(() => {
     const adminRef = ref(database, "rooms/miss2026/adminSelections");
-
     return onValue(adminRef, (snap) => {
-      setAdminSelections(
-        snap.val() || { tour1: [], tour2: [], tour3: [] }
-      );
+      setAdminSelections(snap.val() || { tour1: [], tour2: [], tour3: [] });
     });
   }, []);
 
@@ -79,18 +76,10 @@ export function AppProvider({ children }) {
     const finaleRef = ref(database, "rooms/miss2026/finaleStarted");
     const gameIdRef = ref(database, "rooms/miss2026/gameId");
 
-    const unsubV = onValue(votesRef, (snap) =>
-      setVotesOpen(Boolean(snap.val()))
-    );
-    const unsubT = onValue(tourRef, (snap) =>
-      setTour(snap.val() || 1)
-    );
-    const unsubF = onValue(finaleRef, (snap) =>
-      setFinaleStarted(Boolean(snap.val()))
-    );
-    const unsubG = onValue(gameIdRef, (snap) =>
-      setGameId(snap.val() || "loading")
-    );
+    const unsubV = onValue(votesRef, (snap) => setVotesOpen(Boolean(snap.val())));
+    const unsubT = onValue(tourRef, (snap) => setTour(snap.val() || 1));
+    const unsubF = onValue(finaleRef, (snap) => setFinaleStarted(Boolean(snap.val())));
+    const unsubG = onValue(gameIdRef, (snap) => setGameId(snap.val() || "loading"));
 
     return () => {
       unsubV();
@@ -113,11 +102,15 @@ export function AppProvider({ children }) {
     });
   };
 
+  // ⭐⭐ FONCTION QUI MANQUAIT → ajoutée ⭐⭐
+  const resetPlayerVotes = (pseudo) => {
+    remove(ref(database, `rooms/miss2026/players/${pseudo}/tour1`));
+    remove(ref(database, `rooms/miss2026/players/${pseudo}/tour2`));
+    remove(ref(database, `rooms/miss2026/players/${pseudo}/tour3`));
+  };
+
   const updatePlayerVote = (pseudo, tourNum, selection) => {
-    set(
-      ref(database, `rooms/miss2026/players/${pseudo}/tour${tourNum}`),
-      selection
-    );
+    set(ref(database, `rooms/miss2026/players/${pseudo}/tour${tourNum}`), selection);
   };
 
   // RESET TOTAL
@@ -141,14 +134,9 @@ export function AppProvider({ children }) {
       [`tour${num}`]: list,
     });
 
-  const updateTour = (num) =>
-    set(ref(database, "rooms/miss2026/tour"), num);
-
-  const updateVotesOpen = (state) =>
-    set(ref(database, "rooms/miss2026/votesOpen"), state);
-
-  const updateFinaleStarted = (state) =>
-    set(ref(database, "rooms/miss2026/finaleStarted"), state);
+  const updateTour = (num) => set(ref(database, "rooms/miss2026/tour"), num);
+  const updateVotesOpen = (state) => set(ref(database, "rooms/miss2026/votesOpen"), state);
+  const updateFinaleStarted = (state) => set(ref(database, "rooms/miss2026/finaleStarted"), state);
 
   // -----------------------------------------
   // PROVIDER
@@ -163,6 +151,7 @@ export function AppProvider({ children }) {
         finaleStarted,
         gameId,
         addPlayer,
+        resetPlayerVotes,   // ⭐ ajouté ⭐
         updatePlayerVote,
         updateAdminSelections,
         updateTour,
