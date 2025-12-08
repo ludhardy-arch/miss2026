@@ -3,6 +3,9 @@
 import React, { useContext, useState, useEffect } from "react";
 import { AppContext } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
+import { database } from "../firebase";
+import { ref, remove } from "firebase/database";
+
 import Leaderboard from "../components/Leaderboard";
 import ChatBubble from "../components/ChatBubble";
 import SelectionBubble from "../components/SelectionBubble";
@@ -25,25 +28,48 @@ export default function Player({ user }) {
     updatePlayerVote,
     addPlayer,
     players,
+    resetPlayerVotes,
   } = useContext(AppContext);
 
   const navigate = useNavigate();
 
-  // Déconnexion (bouton en bas)
-  const handleLogout = () => {
+  // ⭐⭐⭐ DÉCONNEXION TOTALE ⭐⭐⭐
+  const handleLogout = async () => {
     if (!window.confirm("Voulez-vous vraiment vous déconnecter ?")) return;
 
-    localStorage.removeItem("miss_user");
+    const pseudo = user.pseudo;
 
-    // Nettoie les sélections du joueur
+    // 1️⃣ Reset votes Firebase
+    resetPlayerVotes(pseudo);
+
+    // 2️⃣ Supprimer complètement le joueur dans Firebase
+    await remove(ref(database, `rooms/miss2026/players/${pseudo}`));
+
+    // 3️⃣ Supprimer TOUT le localStorage lié à ce joueur
     Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith("miss2026_") && key.endsWith(`_${user.pseudo}`)) {
+      if (
+        key.startsWith("miss2026_selection_tour") &&
+        key.endsWith(`_${pseudo}`)
+      ) {
+        localStorage.removeItem(key);
+      }
+      if (
+        key.startsWith("miss2026_ranking_tour") &&
+        key.endsWith(`_${pseudo}`)
+      ) {
         localStorage.removeItem(key);
       }
     });
 
+    localStorage.removeItem("miss_user");
+
+    // 4️⃣ Redirection Login
     navigate("/login", { replace: true });
   };
+
+  // ----------------------------------------------------------------------------------------
+  // LOGIQUE DU PLAYER
+  // ----------------------------------------------------------------------------------------
 
   const [selection, setSelection] = useState([]);
   const [ranking, setRanking] = useState({});
@@ -54,22 +80,21 @@ export default function Player({ user }) {
     setShowVoteBanner(true);
   }, [tour]);
 
-  // Enregistrer le joueur en base
+  // Enregistrer le joueur en base (connected)
   useEffect(() => {
     addPlayer(user.pseudo);
   }, [user.pseudo]);
 
   const playerData = players[user.pseudo] || {};
   const currentKey = `tour${tour}`;
-
   const hasVotedThisTour =
     Array.isArray(playerData[currentKey]) &&
     playerData[currentKey].length > 0;
 
-  // ⭐ Nouveau : Tour 1 = 12 miss
+  // ⭐ Tour 1 = 12 miss
   const maxSelect = tour === 1 ? 12 : tour === 2 ? 5 : 5;
 
-  // IDS des candidates selon tour
+  // IDS candidates selon tour
   const candidateIds =
     tour === 1
       ? CANDIDATES.map((c) => c.id)
@@ -81,7 +106,7 @@ export default function Player({ user }) {
     .map((id) => CANDIDATES.find((c) => c.id === id))
     .filter(Boolean);
 
-  // Si déjà voté : aller au waiting
+  // Si déjà voté, aller en attente
   useEffect(() => {
     if (hasVotedThisTour) navigate("/waiting");
   }, [hasVotedThisTour, navigate]);
@@ -90,43 +115,46 @@ export default function Player({ user }) {
   useEffect(() => {
     if (hasVotedThisTour) return;
 
-    if (tour === 3) {
-      const key = `miss2026_ranking_tour3_${user.pseudo}`;
-      setRanking(JSON.parse(localStorage.getItem(key)) || {});
-    } else {
-      const key = `miss2026_selection_tour${tour}_${user.pseudo}`;
-      setSelection(JSON.parse(localStorage.getItem(key)) || []);
-    }
+    const key =
+      tour === 3
+        ? `miss2026_ranking_tour3_${user.pseudo}`
+        : `miss2026_selection_tour${tour}_${user.pseudo}`;
+
+    const saved = localStorage.getItem(key);
+
+    if (tour === 3) setRanking(saved ? JSON.parse(saved) : {});
+    else setSelection(saved ? JSON.parse(saved) : []);
   }, [tour, hasVotedThisTour, user.pseudo]);
 
-  // Sauvegardes locales
+  // Sauvegarde locale live
   useEffect(() => {
     if (hasVotedThisTour || tour === 3) return;
+
     localStorage.setItem(
       `miss2026_selection_tour${tour}_${user.pseudo}`,
       JSON.stringify(selection)
     );
   }, [selection, tour, hasVotedThisTour, user.pseudo]);
 
+  // Sauvegarde classement finale
   useEffect(() => {
     if (hasVotedThisTour || tour !== 3) return;
+
     localStorage.setItem(
       `miss2026_ranking_tour3_${user.pseudo}`,
       JSON.stringify(ranking)
     );
   }, [ranking, tour, hasVotedThisTour, user.pseudo]);
 
-  // Sélection tours 1 & 2
+  // Sélection pour tour 1 & 2
   const handleClickMiss = (id) => {
     if (!votesOpen || hasVotedThisTour || tour === 3) return;
-
     if (selection.includes(id))
       setSelection(selection.filter((x) => x !== id));
     else if (selection.length < maxSelect)
       setSelection([...selection, id]);
   };
 
-  // Labels classement
   const getRankLabel = (rank) =>
     ["Miss France", "1ère dauphine", "2ème dauphine", "3ème dauphine", "4ème dauphine"][rank - 1];
 
@@ -145,12 +173,15 @@ export default function Player({ user }) {
       return;
     }
 
-    // TOUR 3
+    // ⭐ FINALE
     const ranks = Object.values(ranking);
-    const needed = Array.from({ length: candidates.length }, (_, i) => i + 1);
-
     if (ranks.length !== candidates.length)
       return alert("Tu dois classer toutes les finalistes.");
+
+    const needed = Array.from(
+      { length: candidates.length },
+      (_, i) => i + 1
+    );
 
     if (!needed.every((r) => ranks.includes(r)))
       return alert("Chaque place doit être utilisée une seule fois.");
@@ -167,7 +198,7 @@ export default function Player({ user }) {
     navigate("/waiting");
   };
 
-  // Couleurs bordures selon progression
+  // Couleurs cartes
   const getBorderColor = (id) => {
     const t1P = playerData.tour1 || [];
     const t2P = playerData.tour2 || [];
@@ -178,7 +209,7 @@ export default function Player({ user }) {
       return "blue";
 
     if (t1P.includes(id) && t1A.includes(id)) return "green";
-    if (t2P.includes(id) && t2A.includes(id)) return "gold";
+    if (t2P.includes(id) && t2A.includes(id)) return "yellow";
 
     return "grey";
   };
@@ -187,7 +218,7 @@ export default function Player({ user }) {
     ({
       blue: "border-blue",
       green: "border-green",
-      gold: "border-yellow",
+      yellow: "border-yellow",
       grey: "border-grey",
     }[getBorderColor(id)]);
 
@@ -199,6 +230,10 @@ export default function Player({ user }) {
       : tour === 2
       ? "Tour 2 — sélectionne 5 miss"
       : "Tour 3 — classe les finalistes";
+
+  // =====================================================================================
+  // RENDER
+  // =====================================================================================
 
   return (
     <div style={{ padding: 20, maxWidth: 1200, margin: "0 auto" }}>
@@ -247,7 +282,7 @@ export default function Player({ user }) {
       <h1>Bienvenue {user.pseudo}</h1>
       <p style={{ textAlign: "center" }}>{subtitle}</p>
 
-      {/* ⭐ Bannière VOTES FERMÉS */}
+      {/* ⭐ Bannière votes fermés */}
       {!votesOpen && (
         <div
           style={{
@@ -282,13 +317,14 @@ export default function Player({ user }) {
         }}
       >
         <h3>Légende :</h3>
+
         <LegendItem colorClass="border-blue" text="Sélection en cours" />
         <LegendItem colorClass="border-green" text="Bonne au tour 1" />
         <LegendItem colorClass="border-yellow" text="Bonne au tour 2" />
         <LegendItem colorClass="border-grey" text="Jamais sélectionnée" />
       </div>
 
-      {/* ⭐ Tours 1 et 2 */}
+      {/* ⭐ Tours 1 & 2 */}
       {tour !== 3 && (
         <div className="grid">
           {candidates.map((miss) => (
@@ -384,7 +420,7 @@ export default function Player({ user }) {
         </div>
       )}
 
-      {/* ⭐ Validation */}
+      {/* ⭐ Bouton validation */}
       <div style={{ textAlign: "center", marginTop: 20 }}>
         <button
           onClick={handleValidate}
@@ -400,7 +436,7 @@ export default function Player({ user }) {
       {/* ⭐⭐ Bulle bleue sélection ⭐⭐ */}
       <SelectionBubble user={user} tour={tour} selection={selection} />
 
-      {/* ⭐ Bouton Déconnexion */}
+      {/* ⭐ Déconnexion (totale) */}
       <div style={{ textAlign: "center", marginTop: 40 }}>
         <button
           onClick={handleLogout}
