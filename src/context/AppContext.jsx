@@ -2,7 +2,7 @@
 
 import React, { createContext, useEffect, useState } from "react";
 import { database } from "../firebase";
-import { ref, onValue, set, update, remove } from "firebase/database";
+import { ref, onValue, set, update } from "firebase/database";
 
 export const AppContext = createContext();
 
@@ -16,6 +16,7 @@ export function AppProvider({ children }) {
   const [votesOpen, setVotesOpen] = useState(false);
   const [tour, setTour] = useState(1);
   const [finaleStarted, setFinaleStarted] = useState(false);
+  const [gameId, setGameId] = useState(null); // 🔥 identifiant de partie
 
   const roomRef = ref(database, "rooms/miss2026");
 
@@ -27,12 +28,16 @@ export function AppProvider({ children }) {
       roomRef,
       (snap) => {
         if (snap.exists()) return;
+
+        const initialGameId = Date.now().toString();
+
         set(roomRef, {
           players: {},
           adminSelections: { tour1: [], tour2: [], tour3: [] },
           votesOpen: false,
           tour: 1,
           finaleStarted: false,
+          gameId: initialGameId,
         });
       },
       { onlyOnce: true }
@@ -63,12 +68,13 @@ export function AppProvider({ children }) {
   }, []);
 
   // -----------------------------------------
-  // SYNC TOUR / VOTES / FINALE
+  // SYNC TOUR / VOTES / FINALE / GAMEID
   // -----------------------------------------
   useEffect(() => {
     const votesRef = ref(database, "rooms/miss2026/votesOpen");
     const tourRef = ref(database, "rooms/miss2026/tour");
     const finaleRef = ref(database, "rooms/miss2026/finaleStarted");
+    const gameIdRef = ref(database, "rooms/miss2026/gameId");
 
     const unsubV = onValue(votesRef, (snap) =>
       setVotesOpen(Boolean(snap.val()))
@@ -79,11 +85,15 @@ export function AppProvider({ children }) {
     const unsubF = onValue(finaleRef, (snap) =>
       setFinaleStarted(Boolean(snap.val()))
     );
+    const unsubG = onValue(gameIdRef, (snap) =>
+      setGameId(snap.val() || null)
+    );
 
     return () => {
       unsubV();
       unsubT();
       unsubF();
+      unsubG();
     };
   }, []);
 
@@ -91,7 +101,7 @@ export function AppProvider({ children }) {
   // FUNCTIONS
   // -----------------------------------------
 
-  // Ajout ou connexion d’un joueur
+  // Ajout / connexion joueur
   const addPlayer = (pseudo) => {
     if (!pseudo) return;
 
@@ -101,7 +111,7 @@ export function AppProvider({ children }) {
     });
   };
 
-  // Enregistrer VRAI vote (validation)
+  // Enregistrer vote validé
   const updatePlayerVote = (pseudo, tourNum, selection) => {
     set(
       ref(database, `rooms/miss2026/players/${pseudo}/tour${tourNum}`),
@@ -109,11 +119,11 @@ export function AppProvider({ children }) {
     );
   };
 
-  // Reset total → supprime tout + localStorage
+  // RESET TOTAL
   const resetGame = () => {
     if (!window.confirm("Réinitialiser toute la partie ?")) return;
 
-    localStorage.clear(); // RESET COMPLET côté joueur
+    const newGameId = Date.now().toString();
 
     set(ref(database, "rooms/miss2026"), {
       players: {},
@@ -121,6 +131,7 @@ export function AppProvider({ children }) {
       votesOpen: false,
       tour: 1,
       finaleStarted: false,
+      gameId: newGameId,
     });
   };
 
@@ -129,7 +140,8 @@ export function AppProvider({ children }) {
       [`tour${num}`]: list,
     });
 
-  const updateTour = (num) => set(ref(database, "rooms/miss2026/tour"), num);
+  const updateTour = (num) =>
+    set(ref(database, "rooms/miss2026/tour"), num);
 
   const updateVotesOpen = (state) =>
     set(ref(database, "rooms/miss2026/votesOpen"), state);
@@ -148,6 +160,7 @@ export function AppProvider({ children }) {
         votesOpen,
         tour,
         finaleStarted,
+        gameId,
         addPlayer,
         updatePlayerVote,
         updateAdminSelections,
@@ -161,3 +174,4 @@ export function AppProvider({ children }) {
     </AppContext.Provider>
   );
 }
+
