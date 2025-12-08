@@ -28,14 +28,13 @@ export default function Player({ user }) {
 
   const navigate = useNavigate();
 
-  // ⭐⭐⭐ Déconnexion en bas de page
+  // ⭐ Déconnexion (en bas de page)
   const handleLogout = () => {
     if (!window.confirm("Voulez-vous vraiment vous déconnecter ?")) return;
 
-    // Supprime le user
     localStorage.removeItem("miss_user");
 
-    // Supprime données locales
+    // Supprime les données locales du joueur
     Object.keys(localStorage).forEach((key) => {
       if (key.startsWith("miss2026_") && key.endsWith(`_${user.pseudo}`)) {
         localStorage.removeItem(key);
@@ -44,6 +43,7 @@ export default function Player({ user }) {
 
     navigate("/login", { replace: true });
   };
+
   // ----------------------------------------------------------
 
   const [selection, setSelection] = useState([]);
@@ -55,7 +55,7 @@ export default function Player({ user }) {
     setShowVoteBanner(true);
   }, [tour]);
 
-  // Enregistrer joueur
+  // Enregistrer le joueur
   useEffect(() => {
     addPlayer(user.pseudo);
   }, [user.pseudo]);
@@ -68,7 +68,7 @@ export default function Player({ user }) {
 
   const maxSelect = tour === 1 ? 15 : tour === 2 ? 5 : 5;
 
-  // Liste candidates
+  // Liste candidates selon tour
   const candidateIds =
     tour === 1
       ? CANDIDATES.map((c) => c.id)
@@ -100,21 +100,21 @@ export default function Player({ user }) {
     }
   }, [tour, hasVotedThisTour, user.pseudo]);
 
-  // Sauvegarde locale tours 1/2
+  // Sauvegarde locale tour 1 & 2
   useEffect(() => {
     if (hasVotedThisTour || tour === 3) return;
     const key = `miss2026_selection_tour${tour}_${user.pseudo}`;
     localStorage.setItem(key, JSON.stringify(selection));
   }, [selection, tour, hasVotedThisTour, user.pseudo]);
 
-  // Sauvegarde finale
+  // Sauvegarde classement final
   useEffect(() => {
     if (hasVotedThisTour || tour !== 3) return;
     const key = `miss2026_ranking_tour3_${user.pseudo}`;
     localStorage.setItem(key, JSON.stringify(ranking));
   }, [ranking, tour, hasVotedThisTour, user.pseudo]);
 
-  // Sélection tours 1 & 2
+  // Sélection (tour 1 & 2)
   const handleClickMiss = (id) => {
     if (tour === 3 || !votesOpen || hasVotedThisTour) return;
 
@@ -133,7 +133,7 @@ export default function Player({ user }) {
     return "4ème dauphine";
   };
 
-  // Valider vote
+  // Validation vote
   const handleValidate = () => {
     if (!votesOpen) {
       alert("Les votes ne sont pas ouverts.");
@@ -146,7 +146,8 @@ export default function Player({ user }) {
         return;
       }
 
-      if (!window.confirm("Envoyer ton vote ? Ce choix est définitif.")) return;
+      if (!window.confirm("Envoyer ton vote ? Tu ne pourras plus le modifier."))
+        return;
 
       updatePlayerVote(user.pseudo, tour, selection);
       alert("Vote enregistré !");
@@ -166,7 +167,7 @@ export default function Player({ user }) {
 
       const needed = Array.from({ length: nb }, (_, i) => i + 1);
       if (!needed.every((r) => ranks.includes(r))) {
-        alert("Chaque place doit être unique.");
+        alert("Chaque place doit être utilisée une seule fois.");
         return;
       }
 
@@ -179,7 +180,7 @@ export default function Player({ user }) {
       }
 
       updatePlayerVote(user.pseudo, 3, ordered);
-      alert("Classement enregistré !");
+      alert("Classement final enregistré !");
       navigate("/waiting");
     }
   };
@@ -218,7 +219,7 @@ export default function Player({ user }) {
     <div style={{ padding: 20, maxWidth: 1200, margin: "0 auto" }}>
       <style>{votePulseKeyframes}</style>
 
-      {/* Bannière votes ouverts */}
+      {/* ⭐ Bannière verte votes ouverts */}
       {votesOpen && showVoteBanner && (
         <div
           style={{
@@ -240,7 +241,7 @@ export default function Player({ user }) {
           <div>
             📢 <b>Les votes sont ouverts !!!</b>
             <br />
-            Le temps limite est le même qu'à la télé.
+            Le temps limite pour valider votre vote est le même qu'à la télé.
           </div>
 
           <button
@@ -283,7 +284,7 @@ export default function Player({ user }) {
         >
           <div>LES VOTES SONT FERMÉS</div>
           <div style={{ fontSize: 15, marginTop: 4 }}>
-            Attendez l'ouverture des votes par Ludo.
+            Patientez que Ludo ouvre les votes.
           </div>
         </div>
       )}
@@ -344,7 +345,7 @@ export default function Player({ user }) {
         </div>
       )}
 
-      {/* Finale */}
+      {/* Tour 3 */}
       {tour === 3 && (
         <div className="grid">
           {candidates.map((miss) => (
@@ -377,6 +378,7 @@ export default function Player({ user }) {
                   setRanking((prev) => {
                     const updated = { ...prev };
 
+                    // Libère l’ancien rang attribué
                     Object.keys(updated).forEach((mid) => {
                       if (updated[mid] === newRank) delete updated[mid];
                     });
@@ -409,7 +411,7 @@ export default function Player({ user }) {
         </div>
       )}
 
-      {/* Validation */}
+      {/* Bouton valider */}
       <div style={{ textAlign: "center", marginTop: 20 }}>
         <button
           onClick={handleValidate}
@@ -419,34 +421,36 @@ export default function Player({ user }) {
         </button>
       </div>
 
+      {/* Classement / leaderboard */}
       <Leaderboard />
 
+      {/* Chat */}
       <ChatBubble user={user} />
 
-      {/* ⭐⭐⭐ BOUTON DECONNEXION FIXE EN BAS A DROITE */}
-      <button
-        onClick={handleLogout}
-        style={{
-          position: "fixed",
-          bottom: 20,
-          right: 20,
-          zIndex: 99999,
-          background: "#ff0066",
-          color: "white",
-          padding: "10px 14px",
-          borderRadius: "50px",
-          border: "none",
-          fontWeight: "bold",
-          cursor: "pointer",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-        }}
-      >
-        ⛔ Déconnexion
-      </button>
+      {/* ⭐⭐⭐ Bouton Déconnexion en BAS */}
+      <div style={{ textAlign: "center", marginTop: 40 }}>
+        <button
+          onClick={handleLogout}
+          style={{
+            background: "crimson",
+            color: "white",
+            padding: "10px 25px",
+            borderRadius: 10,
+            border: "none",
+            fontSize: 18,
+            fontWeight: "bold",
+            cursor: "pointer",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+          }}
+        >
+          ⛔ Déconnexion
+        </button>
+      </div>
     </div>
   );
 }
 
+function Legendary() {}
 function LegendItem({ colorClass, text }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
