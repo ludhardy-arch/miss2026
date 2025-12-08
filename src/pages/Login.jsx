@@ -1,16 +1,15 @@
 // src/pages/Login.jsx
 
-import React, { useContext, useState } from "react";
-import { AppContext } from "../context/AppContext";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Login({ setUser }) {
-  const { addPlayer, resetPlayerVotes } = useContext(AppContext);
   const [pseudo, setPseudo] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  // 🔥 Nouvelle version qui supprime TOUTES les anciennes données, tous gameId confondus
+  // 🔥 Nettoyage complet des anciennes données locales pour ce pseudo
+  // Fonctionne avec tous les gameId (clés du type "miss2026_<gameId>_..._<pseudo>")
   const cleanLocalData = (pseudo) => {
     localStorage.removeItem("miss_user");
 
@@ -22,10 +21,13 @@ export default function Login({ setUser }) {
   };
 
   const handleLogin = () => {
-    if (!pseudo.trim()) return alert("Entrez un pseudo !");
+    if (!pseudo.trim()) {
+      alert("Entrez un pseudo !");
+      return;
+    }
     const p = pseudo.trim();
 
-    // ADMIN
+    // 🔐 ADMIN
     if (password === "1234") {
       cleanLocalData(p);
       setUser({ pseudo: p, role: "admin" });
@@ -33,12 +35,9 @@ export default function Login({ setUser }) {
       return;
     }
 
-    // PLAYER
+    // 🧑‍🤝‍🧑 JOUEUR
     if (password === "ludo") {
-      resetPlayerVotes(p);
       cleanLocalData(p);
-
-      addPlayer(p);
       setUser({ pseudo: p, role: "player" });
       navigate("/player");
       return;
@@ -73,6 +72,7 @@ export default function Login({ setUser }) {
         Qui aura le meilleur pronostic ?
       </p>
 
+      {/* RÈGLES DU JEU */}
       <p
         style={{
           fontSize: 16,
@@ -86,17 +86,23 @@ export default function Login({ setUser }) {
           fontWeight: 500,
         }}
       >
-        ⚠️ <b style={{ color: "#d20055" }}>Important :</b><br />
-        Bien attendre que <b>les votes soient ouverts</b> pour sélectionner vos miss.<br />
-        La fermeture des votes sera effectuée <b>en même temps qu'à la télé</b> 📺✨
-        <br /><br />
-
-        🟣 <b>Premier tour :</b> sélectionner <b>15 miss</b><br />
-        🔵 <b>Deuxième tour :</b> sélectionner <b>5 miss</b><br />
+        ⚠️ <b style={{ color: "#d20055" }}>Important :</b>
+        <br />
+        Bien attendre que <b>les votes soient ouverts</b> pour sélectionner vos
+        miss.
+        <br />
+        La fermeture des votes à chaque tour sera effectuée{" "}
+        <b>en même temps qu'à la télé</b> 📺✨
+        <br />
+        <br />
+        🟣 <b>Premier tour :</b> sélectionner <b>15 miss</b>
+        <br />
+        🔵 <b>Deuxième tour :</b> sélectionner <b>5 miss</b>
+        <br />
         🟡 <b>Troisième tour :</b> classer <b>les 5 finalistes</b>
-        <br /><br />
-
-        Bonne chance à tous ! 👑
+        <br />
+        <br />
+        Bonne chance à tous… et que le meilleur pronostiqueur gagne ! 👑
       </p>
 
       <p
